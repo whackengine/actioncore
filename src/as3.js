@@ -883,7 +883,7 @@ export function inobject(base, name)
         // Proxy
         if (isproxy)
         {
-            return !!callproperty(base, flexproxyns, "hasProperty", name);
+            return !!callproperty(base, swproxyns, "hasProperty", name);
         }
 
         // Test collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
@@ -1075,7 +1075,7 @@ export function hasownproperty(base, name)
         // Proxy
         if (isproxy)
         {
-            return !!callproperty(base, flexproxyns, "hasProperty", name);
+            return !!callproperty(base, swproxyns, "hasProperty", name);
         }
 
         // Test collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
@@ -1539,8 +1539,8 @@ function *iterstringchars(str)
 
 function *nameiterator_assumeProxy(obj)
 {
-    const nextNameIndexv = getproperty(obj, flexproxyns, "nextNameIndex");
-    const nextNamev = getproperty(obj, flexproxyns, "nextName");
+    const nextNameIndexv = getproperty(obj, swproxyns, "nextNameIndex");
+    const nextNamev = getproperty(obj, swproxyns, "nextName");
     if (!(istype(nextNameIndexv, functionclass) && istype(nextNamev, functionclass)))
     {
         throw new TypeError("Cannot iterate an incorrectly implemented proxy.");
@@ -1564,8 +1564,8 @@ function *nameiterator_assumeProxy(obj)
 
 function *valueiterator_assumeProxy(obj)
 {
-    const nextNameIndexv = getproperty(obj, flexproxyns, "nextNameIndex");
-    const nextValuev = getproperty(obj, flexproxyns, "nextValue");
+    const nextNameIndexv = getproperty(obj, swproxyns, "nextNameIndex");
+    const nextValuev = getproperty(obj, swproxyns, "nextValue");
     if (!(istype(nextNameIndexv, functionclass) && istype(nextValuev, functionclass)))
     {
         throw new TypeError("Cannot iterate an incorrectly implemented proxy.");
@@ -1915,7 +1915,7 @@ export function getdescendants(base, qual, name)
 
         if (istype(base, proxyclass))
         {
-            const getDescendantsv = getproperty(base, flexproxyns, "getDescendants");
+            const getDescendantsv = getproperty(base, swproxyns, "getDescendants");
             if (!istype(getDescendantsv, functionclass))
             {
                 throw new TypeError("Incorrect Proxy#getDescendants() method.");
@@ -2047,7 +2047,7 @@ export function hasmethod(base, qual, name)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return istype(callproperty(base, flexproxyns, "getProperty", qn), functionclass);
+            return istype(callproperty(base, swproxyns, "getProperty", qn), functionclass);
         }
 
         // Read the "Class" object's class properties
@@ -2343,7 +2343,7 @@ export function getproperty(base, qual, name)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return callproperty(base, flexproxyns, "getProperty", qn);
+            return callproperty(base, swproxyns, "getProperty", qn);
         }
 
         // Read the "Class" object's class properties
@@ -2648,7 +2648,7 @@ export function setproperty(base, qual, name, value)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            callproperty(base, flexproxyns, "setProperty", name, qn);
+            callproperty(base, swproxyns, "setProperty", name, qn);
             return;
         }
 
@@ -2904,7 +2904,7 @@ export function deleteproperty(base, qual, name)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return !!callproperty(base, flexproxyns, "deleteProperty", qn);
+            return !!callproperty(base, swproxyns, "deleteProperty", qn);
         }
 
         // Read the "Class" object's class properties
@@ -3075,7 +3075,7 @@ export function callproperty(base, qual, name, ...args)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return callproperty(base, flexproxyns, "callProperty", qn, ...args);
+            return callproperty(base, swproxyns, "callProperty", qn, ...args);
         }
 
         // Read the "Class" object's class properties
@@ -3373,13 +3373,13 @@ function preincreaseproperty(base, qual, name, incVal)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            let v = callproperty(base, flexproxyns, "getProperty", qn);
+            let v = callproperty(base, swproxyns, "getProperty", qn);
             if (typeof v !== "number")
             {
                 throw new TypeError("Cannot increment or decrement a non numeric value.");
             }
             v += incVal;
-            callproperty(base, flexproxyns, "setProperty", qn, v);
+            callproperty(base, swproxyns, "setProperty", qn, v);
             return v;
         }
 
@@ -3682,12 +3682,12 @@ function postincreaseproperty(base, qual, name, incVal)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            let v = callproperty(base, flexproxyns, "getProperty", qn);
+            let v = callproperty(base, swproxyns, "getProperty", qn);
             if (typeof v !== "number")
             {
                 throw new TypeError("Cannot increment or decrement a non numeric value.");
             }
-            callproperty(base, flexproxyns, "setProperty", qn, v + incVal);
+            callproperty(base, swproxyns, "setProperty", qn, v + incVal);
             return v;
         }
 
@@ -4227,12 +4227,12 @@ function randomHexID()
 /**
  * The `AS3` namespace.
  */
-export const as3ns = new Userns("http://hydroper.com/AS3/2024/builtin");
+export const as3ns = new Userns("http://skywhack.net/AS3/2024/builtin");
 
 /**
- * The `flex_proxy` namespace.
+ * The `sw_proxy` namespace.
  */
-export const flexproxyns = new Userns("http://hydroper.com/2024/actionscript/flex/proxy");
+export const swproxyns = new Userns("http://skywhack.net/2024/actionscript/sw/proxy");
 
 // ----- Globals -----
 
@@ -9241,7 +9241,7 @@ export const verifyerrorclass = defineclass(name($publicns, "VerifyError"),
     ]
 );
 
-$publicns = packagens("flex.utils");
+$publicns = packagens("sw.utils");
 
 export const DICTIONARY_PROPERTIES_INDEX = 2;
 export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
@@ -9691,8 +9691,8 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
     ]
 );
 
-// public namespace flex_proxy;
-definensalias($publicns, "flex_proxy", { ns: flexproxyns });
+// public namespace sw_proxy;
+definensalias($publicns, "sw_proxy", { ns: swproxyns });
 
 export const proxyclass = defineclass(name($publicns, "Proxy"),
     {
@@ -9701,67 +9701,67 @@ export const proxyclass = defineclass(name($publicns, "Proxy"),
         },
     },
     [
-        [name(flexproxyns, "callProperty"), method(
+        [name(swproxyns, "callProperty"), method(
         {
             exec(name, ...rest)
             {
-                throw new Error("flex_proxy::callProperty() is not implemented.");
+                throw new Error("sw_proxy::callProperty() is not implemented.");
             },
         })],
-        [name(flexproxyns, "deleteProperty"), method(
+        [name(swproxyns, "deleteProperty"), method(
         {
             exec(name)
             {
-                throw new Error("flex_proxy::deleteProperty() is not implemented.");
+                throw new Error("sw_proxy::deleteProperty() is not implemented.");
             },
         })],
-        [name(flexproxyns, "getDescendants"), method(
+        [name(swproxyns, "getDescendants"), method(
         {
             exec(name)
             {
-                throw new Error("flex_proxy::getDescendants() is not implemented.");
+                throw new Error("sw_proxy::getDescendants() is not implemented.");
             },
         })],
-        [name(flexproxyns, "getProperty"), method(
+        [name(swproxyns, "getProperty"), method(
         {
             exec(name)
             {
-                throw new Error("flex_proxy::getProperty() is not implemented.");
+                throw new Error("sw_proxy::getProperty() is not implemented.");
             },
         })],
-        [name(flexproxyns, "hasProperty"), method(
+        [name(swproxyns, "hasProperty"), method(
         {
             exec(name)
             {
-                throw new Error("flex_proxy::hasProperty() is not implemented.");
+                throw new Error("sw_proxy::hasProperty() is not implemented.");
             },
         })],
-        [name(flexproxyns, "nextName"), method(
+        [name(swproxyns, "nextName"), method(
         {
             exec(index)
             {
-                throw new Error("flex_proxy::nextName() is not implemented.");
+                throw new Error("sw_proxy::nextName() is not implemented.");
             },
         })],
-        [name(flexproxyns, "nextNameIndex"), method(
+        [name(swproxyns, "nextNameIndex"), method(
         {
             exec(index)
             {
-                throw new Error("flex_proxy::nextNameIndex() is not implemented.");
+                throw new Error("sw_proxy::nextNameIndex() is not implemented.");
             },
         })],
-        [name(flexproxyns, "nextValue"), method(
+        [name(swproxyns, "nextValue"), method(
         {
             exec(index)
             {
-                throw new Error("flex_proxy::nextValue() is not implemented.");
+                throw new Error("sw_proxy::nextValue() is not implemented.");
             },
         })],
-        [name(flexproxyns, "setProperty"), method(
+        [name(swproxyns, "setProperty"), method(
         {
             exec(name, value)
             {
-                throw new Error("flex_proxy::setProperty() is not implemented.");
+                throw new Error("sw_proxy::setProperty() is not implemented.");
             },
         })],
     ]
