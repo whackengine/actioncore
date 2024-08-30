@@ -4227,12 +4227,12 @@ function randomHexID()
 /**
  * The `AS3` namespace.
  */
-export const as3ns = new Userns("http://skywhack.net/AS3/2024/builtin");
+export const as3ns = new Userns("http://whack.net/AS3/2024/builtin");
 
 /**
  * The `sw_proxy` namespace.
  */
-export const swproxyns = new Userns("http://skywhack.net/2024/actionscript/sw/proxy");
+export const swproxyns = new Userns("http://whack.net/2024/actionscript/whack/proxy");
 
 // ----- Globals -----
 
@@ -9241,7 +9241,7 @@ export const verifyerrorclass = defineclass(name($publicns, "VerifyError"),
     ]
 );
 
-$publicns = packagens("sw.utils");
+$publicns = packagens("whack.utils");
 
 export const DICTIONARY_PROPERTIES_INDEX = 2;
 export const dictionaryclass = defineclass(name($publicns, "Dictionary"),

@@ -1,7 +1,7 @@
 {
-  "name": "skywhack.actioncore",
+  "name": "whack.actioncore",
   "version": "1.0.0",
-  "description": "SkyWhack ActionCore",
+  "description": "Whack ActionCore",
   "main": "src/index.ts",
   "directories": {
     "doc": "docs"
@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/skywhack/actioncore.git"
+    "url": "git+https://github.com/whackengine/actioncore.git"
   },
   "author": "hydroperfox",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/skywhack/actioncore/issues"
+    "url": "https://github.com/whackengine/actioncore/issues"
   },
   "homepage": "https://github.com/skywhack/actioncore#readme",
   "devDependencies": {
