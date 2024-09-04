@@ -4111,6 +4111,17 @@ export function coerce(value, type)
  */
 export function construct(classobj, ...args)
 {
+    if (typeof classobj == "function") {
+        return new classobj(...args);
+    }
+    if (classobj instanceof Array && istype(classobj, classclass))
+    {
+        classobj = classobj[CLASS_CLASS_INDEX];
+    }
+    if (!(classobj instanceof Class))
+    {
+        throw new TypeError("Constructor must be a Class object.");
+    }
     switch (classobj)
     {
         case numberclass:
