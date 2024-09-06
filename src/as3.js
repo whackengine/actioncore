@@ -4241,7 +4241,7 @@ function randomHexID()
 export const as3ns = new Userns("http://whack.net/AS3/2024/builtin");
 
 /**
- * The `sw_proxy` namespace.
+ * The `whack_proxy` namespace.
  */
 export const swproxyns = new Userns("http://whack.net/2024/actionscript/whack/proxy");
 
@@ -9702,8 +9702,8 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
     ]
 );
 
-// public namespace sw_proxy;
-definensalias($publicns, "sw_proxy", { ns: swproxyns });
+// public namespace whack_proxy;
+definensalias($publicns, "whack_proxy", { ns: swproxyns });
 
 export const proxyclass = defineclass(name($publicns, "Proxy"),
     {
@@ -9716,63 +9716,63 @@ export const proxyclass = defineclass(name($publicns, "Proxy"),
         {
             exec(name, ...rest)
             {
-                throw new Error("sw_proxy::callProperty() is not implemented.");
+                throw new Error("whack_proxy::callProperty() is not implemented.");
             },
         })],
         [name(swproxyns, "deleteProperty"), method(
         {
             exec(name)
             {
-                throw new Error("sw_proxy::deleteProperty() is not implemented.");
+                throw new Error("whack_proxy::deleteProperty() is not implemented.");
             },
         })],
         [name(swproxyns, "getDescendants"), method(
         {
             exec(name)
             {
-                throw new Error("sw_proxy::getDescendants() is not implemented.");
+                throw new Error("whack_proxy::getDescendants() is not implemented.");
             },
         })],
         [name(swproxyns, "getProperty"), method(
         {
             exec(name)
             {
-                throw new Error("sw_proxy::getProperty() is not implemented.");
+                throw new Error("whack_proxy::getProperty() is not implemented.");
             },
         })],
         [name(swproxyns, "hasProperty"), method(
         {
             exec(name)
             {
-                throw new Error("sw_proxy::hasProperty() is not implemented.");
+                throw new Error("whack_proxy::hasProperty() is not implemented.");
             },
         })],
         [name(swproxyns, "nextName"), method(
         {
             exec(index)
             {
-                throw new Error("sw_proxy::nextName() is not implemented.");
+                throw new Error("whack_proxy::nextName() is not implemented.");
             },
         })],
         [name(swproxyns, "nextNameIndex"), method(
         {
             exec(index)
             {
-                throw new Error("sw_proxy::nextNameIndex() is not implemented.");
+                throw new Error("whack_proxy::nextNameIndex() is not implemented.");
             },
         })],
         [name(swproxyns, "nextValue"), method(
         {
             exec(index)
             {
-                throw new Error("sw_proxy::nextValue() is not implemented.");
+                throw new Error("whack_proxy::nextValue() is not implemented.");
             },
         })],
         [name(swproxyns, "setProperty"), method(
         {
             exec(name, value)
             {
-                throw new Error("sw_proxy::setProperty() is not implemented.");
+                throw new Error("whack_proxy::setProperty() is not implemented.");
             },
         })],
     ]
