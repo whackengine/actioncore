@@ -883,7 +883,7 @@ export function inobject(base, name)
         // Proxy
         if (isproxy)
         {
-            return !!callproperty(base, swproxyns, "hasProperty", name);
+            return !!callproperty(base, whackproxyns, "hasProperty", name);
         }
 
         // Test collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
@@ -1075,7 +1075,7 @@ export function hasownproperty(base, name)
         // Proxy
         if (isproxy)
         {
-            return !!callproperty(base, swproxyns, "hasProperty", name);
+            return !!callproperty(base, whackproxyns, "hasProperty", name);
         }
 
         // Test collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
@@ -1539,8 +1539,8 @@ function *iterstringchars(str)
 
 function *nameiterator_assumeProxy(obj)
 {
-    const nextNameIndexv = getproperty(obj, swproxyns, "nextNameIndex");
-    const nextNamev = getproperty(obj, swproxyns, "nextName");
+    const nextNameIndexv = getproperty(obj, whackproxyns, "nextNameIndex");
+    const nextNamev = getproperty(obj, whackproxyns, "nextName");
     if (!(istype(nextNameIndexv, functionclass) && istype(nextNamev, functionclass)))
     {
         throw new TypeError("Cannot iterate an incorrectly implemented proxy.");
@@ -1564,8 +1564,8 @@ function *nameiterator_assumeProxy(obj)
 
 function *valueiterator_assumeProxy(obj)
 {
-    const nextNameIndexv = getproperty(obj, swproxyns, "nextNameIndex");
-    const nextValuev = getproperty(obj, swproxyns, "nextValue");
+    const nextNameIndexv = getproperty(obj, whackproxyns, "nextNameIndex");
+    const nextValuev = getproperty(obj, whackproxyns, "nextValue");
     if (!(istype(nextNameIndexv, functionclass) && istype(nextValuev, functionclass)))
     {
         throw new TypeError("Cannot iterate an incorrectly implemented proxy.");
@@ -1915,7 +1915,7 @@ export function getdescendants(base, qual, name)
 
         if (istype(base, proxyclass))
         {
-            const getDescendantsv = getproperty(base, swproxyns, "getDescendants");
+            const getDescendantsv = getproperty(base, whackproxyns, "getDescendants");
             if (!istype(getDescendantsv, functionclass))
             {
                 throw new TypeError("Incorrect Proxy#getDescendants() method.");
@@ -2047,7 +2047,7 @@ export function hasmethod(base, qual, name)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return istype(callproperty(base, swproxyns, "getProperty", qn), functionclass);
+            return istype(callproperty(base, whackproxyns, "getProperty", qn), functionclass);
         }
 
         // Read the "Class" object's class properties
@@ -2343,7 +2343,7 @@ export function getproperty(base, qual, name)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return callproperty(base, swproxyns, "getProperty", qn);
+            return callproperty(base, whackproxyns, "getProperty", qn);
         }
 
         // Read the "Class" object's class properties
@@ -2648,7 +2648,7 @@ export function setproperty(base, qual, name, value)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            callproperty(base, swproxyns, "setProperty", name, qn);
+            callproperty(base, whackproxyns, "setProperty", name, qn);
             return;
         }
 
@@ -2904,7 +2904,7 @@ export function deleteproperty(base, qual, name)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return !!callproperty(base, swproxyns, "deleteProperty", qn);
+            return !!callproperty(base, whackproxyns, "deleteProperty", qn);
         }
 
         // Read the "Class" object's class properties
@@ -3075,7 +3075,7 @@ export function callproperty(base, qual, name, ...args)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            return callproperty(base, swproxyns, "callProperty", qn, ...args);
+            return callproperty(base, whackproxyns, "callProperty", qn, ...args);
         }
 
         // Read the "Class" object's class properties
@@ -3373,13 +3373,13 @@ function preincreaseproperty(base, qual, name, incVal)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            let v = callproperty(base, swproxyns, "getProperty", qn);
+            let v = callproperty(base, whackproxyns, "getProperty", qn);
             if (typeof v !== "number")
             {
                 throw new TypeError("Cannot increment or decrement a non numeric value.");
             }
             v += incVal;
-            callproperty(base, swproxyns, "setProperty", qn, v);
+            callproperty(base, whackproxyns, "setProperty", qn, v);
             return v;
         }
 
@@ -3682,12 +3682,12 @@ function postincreaseproperty(base, qual, name, incVal)
         if (isproxy)
         {
             const qn = notqual ? name : construct(qnameclass, reflectnamespace(qual), name);
-            let v = callproperty(base, swproxyns, "getProperty", qn);
+            let v = callproperty(base, whackproxyns, "getProperty", qn);
             if (typeof v !== "number")
             {
                 throw new TypeError("Cannot increment or decrement a non numeric value.");
             }
-            callproperty(base, swproxyns, "setProperty", qn, v + incVal);
+            callproperty(base, whackproxyns, "setProperty", qn, v + incVal);
             return v;
         }
 
@@ -4243,7 +4243,7 @@ export const as3ns = new Userns("http://whack.net/AS3/2024/builtin");
 /**
  * The `whack_proxy` namespace.
  */
-export const swproxyns = new Userns("http://whack.net/2024/actionscript/whack/proxy");
+export const whackproxyns = new Userns("http://whack.net/2024/actionscript/whack/proxy");
 
 // ----- Globals -----
 
@@ -9703,7 +9703,7 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
 );
 
 // public namespace whack_proxy;
-definensalias($publicns, "whack_proxy", { ns: swproxyns });
+definensalias($publicns, "whack_proxy", { ns: whackproxyns });
 
 export const proxyclass = defineclass(name($publicns, "Proxy"),
     {
@@ -9712,63 +9712,63 @@ export const proxyclass = defineclass(name($publicns, "Proxy"),
         },
     },
     [
-        [name(swproxyns, "callProperty"), method(
+        [name(whackproxyns, "callProperty"), method(
         {
             exec(name, ...rest)
             {
                 throw new Error("whack_proxy::callProperty() is not implemented.");
             },
         })],
-        [name(swproxyns, "deleteProperty"), method(
+        [name(whackproxyns, "deleteProperty"), method(
         {
             exec(name)
             {
                 throw new Error("whack_proxy::deleteProperty() is not implemented.");
             },
         })],
-        [name(swproxyns, "getDescendants"), method(
+        [name(whackproxyns, "getDescendants"), method(
         {
             exec(name)
             {
                 throw new Error("whack_proxy::getDescendants() is not implemented.");
             },
         })],
-        [name(swproxyns, "getProperty"), method(
+        [name(whackproxyns, "getProperty"), method(
         {
             exec(name)
             {
                 throw new Error("whack_proxy::getProperty() is not implemented.");
             },
         })],
-        [name(swproxyns, "hasProperty"), method(
+        [name(whackproxyns, "hasProperty"), method(
         {
             exec(name)
             {
                 throw new Error("whack_proxy::hasProperty() is not implemented.");
             },
         })],
-        [name(swproxyns, "nextName"), method(
+        [name(whackproxyns, "nextName"), method(
         {
             exec(index)
             {
                 throw new Error("whack_proxy::nextName() is not implemented.");
             },
         })],
-        [name(swproxyns, "nextNameIndex"), method(
+        [name(whackproxyns, "nextNameIndex"), method(
         {
             exec(index)
             {
                 throw new Error("whack_proxy::nextNameIndex() is not implemented.");
             },
         })],
-        [name(swproxyns, "nextValue"), method(
+        [name(whackproxyns, "nextValue"), method(
         {
             exec(index)
             {
                 throw new Error("whack_proxy::nextValue() is not implemented.");
             },
         })],
-        [name(swproxyns, "setProperty"), method(
+        [name(whackproxyns, "setProperty"), method(
         {
             exec(name, value)
             {

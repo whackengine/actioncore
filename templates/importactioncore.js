@@ -19,7 +19,7 @@ import {
     CONSTRUCTOR_INDEX,
     DYNAMIC_PROPERTIES_INDEX,
     as3ns,
-    swproxyns,
+    whackproxyns,
     objectclass,
     NUMBER_VALUE_INDEX,
     numberclass,
