@@ -4249,9 +4249,6 @@ export const whackproxyns = new Userns("http://whack.net/2024/actionscript/whack
 
 let $publicns = packagens("");
 
-// public namespace AS3;
-definensalias($publicns, "AS3", { ns: as3ns });
-
 definevar($publicns, "undefined", {
     type: null,
     readonly: true,
@@ -9701,9 +9698,6 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
         })],
     ]
 );
-
-// public namespace whack_proxy;
-definensalias($publicns, "whack_proxy", { ns: whackproxyns });
 
 export const proxyclass = defineclass(name($publicns, "Proxy"),
     {
