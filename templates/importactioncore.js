@@ -102,6 +102,7 @@ import {
     definemethod,
     inobject,
     hasownproperty,
+    globaltrait,
     getglobal,
     setglobal,
     callglobal,

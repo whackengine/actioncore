@@ -1130,6 +1130,14 @@ export function hasownproperty(base, name)
     return false;
 }
 
+/**
+ * Returns a global trait property as is.
+ */
+export function globaltrait(qual, name)
+{
+    return globalnames.getname(qual, name);
+}
+
 export function getglobal(qual, name)
 {
     const trait = globalnames.getname(qual, name);
