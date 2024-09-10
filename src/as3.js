@@ -9722,63 +9722,61 @@ export const proxyclass = defineclass(name($publicns, "Proxy"),
         {
             exec(name, ...rest)
             {
-                throw new Error("whack_proxy::callProperty() is not implemented.");
             },
         })],
         [name(whackproxyns, "deleteProperty"), method(
         {
             exec(name)
             {
-                throw new Error("whack_proxy::deleteProperty() is not implemented.");
+                return false;
             },
         })],
         [name(whackproxyns, "getDescendants"), method(
         {
             exec(name)
             {
-                throw new Error("whack_proxy::getDescendants() is not implemented.");
+                return undefined;
             },
         })],
         [name(whackproxyns, "getProperty"), method(
         {
             exec(name)
             {
-                throw new Error("whack_proxy::getProperty() is not implemented.");
+                return undefined;
             },
         })],
         [name(whackproxyns, "hasProperty"), method(
         {
             exec(name)
             {
-                throw new Error("whack_proxy::hasProperty() is not implemented.");
+                return false;
             },
         })],
         [name(whackproxyns, "nextName"), method(
         {
             exec(index)
             {
-                throw new Error("whack_proxy::nextName() is not implemented.");
+                return "";
             },
         })],
         [name(whackproxyns, "nextNameIndex"), method(
         {
             exec(index)
             {
-                throw new Error("whack_proxy::nextNameIndex() is not implemented.");
+                return 0;
             },
         })],
         [name(whackproxyns, "nextValue"), method(
         {
             exec(index)
             {
-                throw new Error("whack_proxy::nextValue() is not implemented.");
+                return undefined;
             },
         })],
         [name(whackproxyns, "setProperty"), method(
         {
             exec(name, value)
             {
-                throw new Error("whack_proxy::setProperty() is not implemented.");
             },
         })],
     ]
