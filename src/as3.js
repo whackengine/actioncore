@@ -2439,6 +2439,10 @@ export function getproperty(base, qual, name)
         {
             return base.length;
         }
+        if (!isNaN(Number(name)) && Number(name) == name >> 0 && qualincludespublic(qual))
+        {
+            return base[name >> 0];
+        }
         return getproperty([stringclass, untouchedDynamicProperties, base], qual, name);
     }
     // null
