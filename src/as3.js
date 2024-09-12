@@ -4651,6 +4651,41 @@ export const stringclass = defineclass(name($publicns, "String"),
                 return (this[STRING_VALUE_INDEX]).toUpperCase();
             },
         })],
+        [name(as3ns, "trim"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX].trim();
+            },
+        })],
+        [name(as3ns, "trimStart"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX].trimStart();
+            },
+        })],
+        [name(as3ns, "trimEnd"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX].trimEnd();
+            },
+        })],
+        [name(as3ns, "trimLeft"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX].trimLeft();
+            },
+        })],
+        [name(as3ns, "trimRight"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX].trimRight();
+            },
+        })],
         [name(as3ns, "valueOf"), method(
         {
             exec()
