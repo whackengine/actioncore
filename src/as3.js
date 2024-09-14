@@ -2073,7 +2073,8 @@ export function hasmethod(base, qual, name)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+        if (notqual && String(name) == "prototype")
         {
             return base.ecmaprototype;
         }
@@ -2374,7 +2375,8 @@ export function getproperty(base, qual, name)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+        if (notqual && String(name) == "prototype")
         {
             return base.ecmaprototype;
         }
@@ -2687,7 +2689,8 @@ export function setproperty(base, qual, name, value)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+        if (notqual && String(name) == "prototype")
         {
             throw new ReferenceError("Cannot assign to read-only property 'prototype'.");
         }
@@ -2935,7 +2938,8 @@ export function deleteproperty(base, qual, name)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+        if (notqual && String(name) == "prototype")
         {
             throw new TypeError("Cannot delete property 'prototype'.");
         }
@@ -3106,7 +3110,9 @@ export function callproperty(base, qual, name, ...args)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+
+        if (notqual && String(name) == "prototype")
         {
             return call(base.ecmaprototype, ...args);
         }
@@ -3423,7 +3429,8 @@ function preincreaseproperty(base, qual, name, incVal)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+        if (notqual && String(name) == "prototype")
         {
             throw new ReferenceError("Cannot increment or decrement 'prototype'.");
         }
@@ -3730,7 +3737,8 @@ function postincreaseproperty(base, qual, name, incVal)
     // class static
     if (base instanceof Class)
     {
-        if (String(name) == "prototype")
+        const notqual = qualincludespublic(qual);
+        if (notqual && String(name) == "prototype")
         {
             throw new ReferenceError("Cannot increment or decrement 'prototype'.");
         }
@@ -3999,6 +4007,10 @@ export function istype(value, type)
     }
     else if (typeof value == "object" || typeof value == "symbol")
     {
+        if (typeof type !== "function")
+        {
+            return false;
+        }
         return value instanceof type;
     }
 
@@ -9418,6 +9430,86 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         })],
     ]
 );
+
+// public function describeType(val:*):XML;
+definemethod($publicns, "describeType", {
+    exec(val)
+    {
+        if (istype(val, classclass))
+            {
+            const classobj = val[CLASS_CLASS_INDEX];
+            if (classobj instanceof Interface)
+            {
+                const metadata = describe_metadata(classobj.metadata);
+
+                return construct(xmlclass, "<interface>" + metadata + "</interface>");
+            }
+
+            // classobj instanceof Class
+            const metadata = describe_metadata(classobj.metadata);
+            const static_props = [];
+            const instance_props = [];
+            return construct(xmlclass, "<class>" + metadata + "<static>" + describe_props(classobj.staticnames) + "</static><instance>" + describe_props(classobj.prototypenames) + "</instance></class>");
+        }
+        else
+        {
+            return null;
+        }
+    }
+});
+
+function describe_props(names)
+{
+    const r = [];
+    for (const [name, trait] of names.dictionary())
+    {
+        if (name.ns instanceof Systemns && name.ns.kind != Systemns.PUBLIC)
+        {
+            continue;
+        }
+
+        const ns = name.ns instanceof Systemns ? "" : name.ns.uri.replace(/&/g, "&#38;").replace(/"/g, "&#34;");
+        const localname = name.name.replace(/&/g, "&#38;").replace(/"/g, "&#34;");
+
+        if (trait instanceof Variable)
+        {
+            const metadata = describe_metadata(trait.metadata);
+            r.push(`<variable namespace="${ns}" localName="${localname}">${metadata}</variable>`);
+        }
+        else if (trait instanceof VirtualVariable)
+        {
+            const metadata = describe_metadata(trait.metadata);
+            r.push(`<variable namespace="${ns}" localName="${localname}">${metadata}</variable>`);
+        }
+        else if (trait instanceof Method)
+        {
+            const metadata = describe_metadata(trait.metadata);
+            r.push(`<method namespace="${ns}" localName="${localname}">${metadata}</method>`);
+        }
+    }
+    return r.join("");
+}
+
+function describe_metadata(metadata)
+{
+    const r = [];
+    for (const metadata1 of metadata)
+    {
+        if (!/[\w+]/.test(metadata1.name))
+        {
+            continue;
+        }
+        const entries = [];
+        for (const entry of metadata1.entries)
+        {
+            const k = entry[0] ? entry[0].replace(/&/g, "&#38;").replace(/"/g, "&#34;") : "";
+            const v = entry[1].replace(/&/g, "&#38;").replace(/"/g, "&#34;");
+            entries.push(`<entry key="${k}" value="${v}"/>`);
+        }
+        r.push(`<${metadata1.name}>${entries.join("")}</${metadata1.name}>`);
+    }
+    return r.join("");
+}
 
 // public interface IDataInput { ... }
 export const idatainputitrfc = defineinterface(name($publicns, "IDataInput"), {}, []);
