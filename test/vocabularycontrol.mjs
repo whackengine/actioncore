@@ -1,8 +1,9 @@
 import * as $ from "../src/index.js";
 
-let $publicns = $.packagens("com.hydroper.actioncore.test");
+let $publicns = $.packagens("demo");
 
-const Portuguese_ns = new $.Userns("http://linguagem.br");
+// namespace Portuguese_ns = "lang://pt";
+const Portuguese_ns = new $.Userns("lang://pt");
 
 const speakerclass = $.defineclass($.name($publicns, "Speaker"),
 {
