@@ -6545,6 +6545,16 @@ export const functionclass = defineclass(name($publicns, "Function"),
         },
     },
     [
+        [name($publicns, "length"), virtualvar({
+            type: numberclass,
+            getter: method({
+                exec()
+                {
+                    return this[FUNCTION_FUNCTION_INDEX].length;
+                }
+            }),
+            setter: null,
+        })],
         [name(as3ns, "apply"), method(
         {
             exec(thisArg, args)
