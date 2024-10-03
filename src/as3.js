@@ -110,7 +110,23 @@ export class Package
     }
 }
 
+const interneduserns = new Map();
+
 const packages = new Map();
+
+/**
+ * Interns an user namespace.
+ */
+export function userns(uri)
+{
+    let r = interneduserns.get(uri);
+    if (!r)
+    {
+        r = new Userns(uri);
+        interneduserns.set(uri, r);
+    }
+    return r;
+}
 
 /**
  * Retrieves the `public` namespace of a package.
