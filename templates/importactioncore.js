@@ -87,6 +87,7 @@ import {
     proxyclass,
 
     // Functions
+    userns,
     packagens,
     packageinternalns,
     name,
