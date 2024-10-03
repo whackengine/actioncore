@@ -2185,8 +2185,7 @@ export function getproperty(base, qual, name)
 
         if (istype(base, xmlclass))
         {
-            const m = [];
-            const children = (base[XML_NODE_INDEX]).childNodes;
+            const children = base[XML_NODE_INDEX].childNodes;
             if (notqual && !isNaN(Number(name)) && name >>> 0 === Number(name))
             {
                 if ((name >>> 0) >= children.length)
@@ -2197,13 +2196,24 @@ export function getproperty(base, qual, name)
             }
             else
             {
+                const m = [];
                 let qualrefl = qual ? reflectnamespace(qual) : null;
-                for (let i = 0; i < children.length; i++)
+                if (!qualrefl && name == "*")
                 {
-                    const child = children[i];
-                    if (child.nodeType == child.ELEMENT_NODE && w3celementhastagname(child, qualrefl, name))
+                    for (let i = 0; i < children.length; i++)
                     {
-                        m.push(w3cnodetoe4xnode(child));
+                        m.push(w3cnodetoe4xnode(children[i]));
+                    }
+                }
+                else
+                {
+                    for (let i = 0; i < children.length; i++)
+                    {
+                        const child = children[i];
+                        if (child.nodeType == child.ELEMENT_NODE && w3celementhastagname(child, qualrefl, name))
+                        {
+                            m.push(w3cnodetoe4xnode(child));
+                        }
                     }
                 }
                 return [xmllistclass, new Map(), m];
@@ -2212,7 +2222,6 @@ export function getproperty(base, qual, name)
 
         if (istype(base, xmllistclass))
         {
-            const m = [];
             const children = base[XMLLIST_XMLARRAY_INDEX];
             if (notqual && !isNaN(Number(name)) && name >>> 0 === Number(name))
             {
@@ -2224,14 +2233,25 @@ export function getproperty(base, qual, name)
             }
             else
             {
+                const m = [];
                 let qualrefl = qual ? reflectnamespace(qual) : null;
-                for (let i = 0; i < children.length; i++)
+                if (!qualrefl && name == "*")
                 {
-                    const child = children[i];
-                    const childw3c = child[XML_NODE_INDEX];
-                    if (childw3c.nodeType === childw3c.ELEMENT_NODE && w3celementhastagname(childw3c, qualrefl, name))
+                    for (let i = 0; i < children.length; i++)
                     {
-                        m.push(child);
+                        m.push(children[i]);
+                    }
+                }
+                else
+                {
+                    for (let i = 0; i < children.length; i++)
+                    {
+                        const child = children[i];
+                        const childw3c = child[XML_NODE_INDEX];
+                        if (childw3c.nodeType === childw3c.ELEMENT_NODE && w3celementhastagname(childw3c, qualrefl, name))
+                        {
+                            m.push(child);
+                        }
                     }
                 }
                 return [xmllistclass, new Map(), m];
@@ -2802,7 +2822,7 @@ export function deleteproperty(base, qual, name)
         if (istype(base, xmlclass))
         {
             const m = [];
-            const children = (base[XML_NODE_INDEX]).childNodes;
+            const children = base[XML_NODE_INDEX].childNodes;
             if (notqual && !isNaN(Number(name)) && name >>> 0 === Number(name))
             {
                 if ((name >>> 0) >= children.length)
@@ -2815,12 +2835,22 @@ export function deleteproperty(base, qual, name)
             else
             {
                 let qualrefl = qual ? reflectnamespace(qual) : null;
-                for (let i = 0; i < children.length; i++)
+                if (!qualrefl && name == "*")
                 {
-                    const child = children[i];
-                    if (child.nodeType == child.ELEMENT_NODE && w3celementhastagname(child, qualrefl, name))
+                    for (let i = 0; i < children.length; i++)
                     {
-                        m.push(child);
+                        m.push(children[i]);
+                    }
+                }
+                else
+                {
+                    for (let i = 0; i < children.length; i++)
+                    {
+                        const child = children[i];
+                        if (child.nodeType == child.ELEMENT_NODE && w3celementhastagname(child, qualrefl, name))
+                        {
+                            m.push(child);
+                        }
                     }
                 }
                 if (m.length != 0)
@@ -2851,12 +2881,22 @@ export function deleteproperty(base, qual, name)
             else
             {
                 let qualrefl = qual ? reflectnamespace(qual) : null;
-                for (let i = 0; i < children.length; i++)
+                if (!qualrefl && name == "*")
                 {
-                    const child = children[i][XML_NODE_INDEX];
-                    if (child.nodeType == child.ELEMENT_NODE && w3celementhastagname(child, qualrefl, name))
+                    for (let i = 0; i < children.length; i++)
                     {
                         m.push(i);
+                    }
+                }
+                else
+                {
+                    for (let i = 0; i < children.length; i++)
+                    {
+                        const child = children[i][XML_NODE_INDEX];
+                        if (child.nodeType == child.ELEMENT_NODE && w3celementhastagname(child, qualrefl, name))
+                        {
+                            m.push(i);
+                        }
                     }
                 }
                 if (m.length != 0)
@@ -4840,15 +4880,12 @@ export function reflectclass(classOrItrfc)
  */
 export function reflectnamespace(ns)
 {
-    if (ns instanceof Array && istype(ns, namespaceclass))
+    if (ns instanceof Array)
     {
-        if (istype(ns, namespaceclass))
-        {
-            return ns;
-        }
-        return null;
+        // Namespace set results into null.
+        return istype(ns, namespaceclass) ? ns : null;
     }
-    let uri = ns instanceof Systemns ? "" : ns instanceof Userns ? ns.uri : (ns).uri;
+    let uri = ns instanceof Systemns ? "" : ns instanceof Userns ? ns.uri : ns.uri;
     if (ns instanceof Systemns)
     {
         let p = ns.parent instanceof Package ? ns.parent.name : ns.parent instanceof Class ? ns.parent.name : "";
