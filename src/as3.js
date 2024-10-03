@@ -4318,12 +4318,12 @@ function randomHexID()
 /**
  * The `AS3` namespace.
  */
-export const as3ns = new Userns("http://whack.net/AS3/2024/builtin");
+export const as3ns = userns("http://whack.net/AS3/2024/builtin");
 
 /**
  * The `whack_proxy` namespace.
  */
-export const whackproxyns = new Userns("http://whack.net/2024/actionscript/whack/proxy");
+export const whackproxyns = userns("http://whack.net/2024/actionscript/whack/proxy");
 
 // ----- Globals -----
 
