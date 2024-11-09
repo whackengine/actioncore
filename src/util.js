@@ -427,8 +427,13 @@ export class ByteArray
     {
         return ByteArray.from(this);
     }
-    
-    toNodeBuffer()
+
+    toArrayBuffer()
+    {
+        return this.m_dataview.buffer;
+    }
+
+    toBuffer()
     {
         return Buffer.from(this.m_dataview.buffer.slice(0));
     }

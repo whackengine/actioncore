@@ -4325,6 +4325,16 @@ export const as3ns = userns("http://whack.net/AS3/2024/builtin");
  */
 export const whackproxyns = userns("http://whack.net/2024/actionscript/whack/proxy");
 
+/**
+ * The `js_from` namespace.
+ */
+export const js_fromns = userns("http://whack.net/js/interop/from");
+
+/**
+ * The `js_to` namespace.
+ */
+export const js_tons = userns("http://whack.net/js/interop/to");
+
 // ----- Globals -----
 
 let $publicns = packagens("");
@@ -9601,12 +9611,34 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
                 return [bytearrayclass, new Map(), ByteArray.zeroes(length)];
             },
         })],
-        [name($publicns, "from"), method(
+        [name(js_fromns, "arrayBuffer"), method(
         {
             static: true,
             exec(arg)
             {
                 return [bytearrayclass, new Map(), ByteArray.from(arg)];
+            },
+        })],
+        [name(js_fromns, "byteArray"), method(
+        {
+            static: true,
+            exec(arg)
+            {
+                return [bytearrayclass, new Map(), ByteArray.from(arg)];
+            },
+        })],
+        [name(js_tons, "arrayBuffer"), method(
+        {
+            exec()
+            {
+                return this[BYTEARRAY_BA_INDEX].toArrayBuffer();
+            },
+        })],
+        [name(js_tons, "buffer"), method(
+        {
+            exec()
+            {
+                return this[BYTEARRAY_BA_INDEX].toBuffer();
             },
         })],
         [name($publicns, "clone"), method(

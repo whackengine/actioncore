@@ -20,6 +20,8 @@ import {
     DYNAMIC_PROPERTIES_INDEX,
     as3ns,
     whackproxyns,
+    js_fromns,
+    js_tons,
     objectclass,
     NUMBER_VALUE_INDEX,
     numberclass,
