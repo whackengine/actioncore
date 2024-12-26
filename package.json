@@ -27,7 +27,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/node": "^22.1.0",
-    "@xmldom/xmldom": "^0.8.10",
+    "@xmldom/xmldom": "^0.9.6",
     "rollup": "^4.19.2",
     "typedoc": "^0.26.5"
   }
