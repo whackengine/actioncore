@@ -5548,7 +5548,7 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                         return this;
                     }
                     const existingChild = thisNode.childNodes[propertyName];
-                    thisNode.insertBefore(value[XML_NODE_INDEX], existingChild);
+                    thisNode.insertBefore(w3cnodeexitdoc(value[XML_NODE_INDEX]), existingChild);
                     existingChild.remove();
                 }
                 else
@@ -5572,7 +5572,7 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                     {
                         return this;
                     }
-                    thisNode.insertBefore(value[XML_NODE_INDEX], elems[0]);
+                    thisNode.insertBefore(w3cnodeexitdoc(value[XML_NODE_INDEX]), elems[0]);
                     for (const c of elems)
                     {
                         c.remove();
