@@ -1,6 +1,6 @@
 import * as $ from "../src/index.js";
 
-const xnode = $.construct($.xmlclass, `
+const xnode = $.construct($.xmlclass, `\
 <?xml version="1.0"?>
 <a:data xmlns:a="a" val="10">
     <a:item/>
