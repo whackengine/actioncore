@@ -811,6 +811,25 @@ function w3cnodetoe4xnode(w3cnode)
 }
 
 /**
+ * If node is document, return a clone of the root element.
+ */
+function w3cnodeexitdoc(w3cnode)
+{
+    if (w3cnode.nodeType == w3cnode.DOCUMENT_NODE)
+    {
+        for (let i = 0; i < w3cnode.childNodes.length; i++)
+        {
+            const c = w3cnode.childNodes[i];
+            if (c.nodeType == c.ELEMENT_NODE)
+            {
+                return c.cloneNode(true);
+            }
+        }
+    }
+    return w3cnode;
+}
+
+/**
  * Checks whether an object has or inherits a given property name.
  * 
  * This method is used by the `name in o` expression, where
@@ -5051,18 +5070,18 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                 const thisNode = this[XML_NODE_INDEX];
                 if (istype(child, xmlclass))
                 {
-                    thisNode.appendChild(child[XML_NODE_INDEX]);
+                    thisNode.appendChild(w3cnodeexitdoc(child[XML_NODE_INDEX]));
                 }
                 else if (istype(child, xmllistclass))
                 {
                     for (const newChild of child[XMLLIST_XMLARRAY_INDEX])
                     {
-                        thisNode.appendChild(newChild[XML_NODE_INDEX]);
+                        thisNode.appendChild(w3cnodeexitdoc(newChild[XML_NODE_INDEX]));
                     }
                 }
                 else
                 {
-                    thisNode.appendChild(call(xmlclass, tostring(child))[XML_NODE_INDEX]);
+                    thisNode.appendChild(w3cnodeexitdoc(call(xmlclass, tostring(child))[XML_NODE_INDEX]));
                 }
                 return this;
             },
@@ -5323,11 +5342,11 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                 {
                     if (thisNode.hasChildNodes())
                     {
-                        thisNode.insertBefore(child2[XML_NODE_INDEX], thisNode.childNodes[0]);
+                        thisNode.insertBefore(w3cnodeexitdoc(child2[XML_NODE_INDEX]), thisNode.childNodes[0]);
                     }
                     else
                     {
-                        thisNode.appendChild(child2[XML_NODE_INDEX]);
+                        thisNode.appendChild(w3cnodeexitdoc(child2[XML_NODE_INDEX]));
                     }
                     return this;
                 }
@@ -5340,11 +5359,11 @@ export const xmlclass = defineclass(name($publicns, "XML"),
 
                 if ((child1[XML_NODE_INDEX]).nextSibling)
                 {
-                    thisNode.insertBefore(child2[XML_NODE_INDEX], (child1[XML_NODE_INDEX]).nextSibling);
+                    thisNode.insertBefore(w3cnodeexitdoc(child2[XML_NODE_INDEX]), (child1[XML_NODE_INDEX]).nextSibling);
                 }
                 else
                 {
-                    thisNode.appendChild(child2[XML_NODE_INDEX]);
+                    thisNode.appendChild(w3cnodeexitdoc(child2[XML_NODE_INDEX]));
                 }
                 return this;
             }
@@ -5360,7 +5379,7 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                 // Append child2 if child1 is null or undefined
                 if (!child1)
                 {
-                    thisNode.appendChild(child2[XML_NODE_INDEX]);
+                    thisNode.appendChild(w3cnodeexitdoc(child2[XML_NODE_INDEX]));
                     return this;
                 }
 
@@ -5370,7 +5389,7 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                     return undefined;
                 }
 
-                thisNode.insertBefore(child2[XML_NODE_INDEX], child1[XML_NODE_INDEX]);
+                thisNode.insertBefore(w3cnodeexitdoc(child2[XML_NODE_INDEX]), child1[XML_NODE_INDEX]);
                 return this;
             }
         })],
@@ -5463,11 +5482,11 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                 {
                     if (firstChild === null)
                     {
-                        thisNode.appendChild(child[XML_NODE_INDEX]);
+                        thisNode.appendChild(w3cnodeexitdoc(child[XML_NODE_INDEX]));
                     }
                     else
                     {
-                        thisNode.insertBefore(child[XML_NODE_INDEX], firstChild);
+                        thisNode.insertBefore(w3cnodeexitdoc(child[XML_NODE_INDEX]), firstChild);
                     }
                 }
                 else if (istype(child, xmllistclass))
@@ -5476,11 +5495,11 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                     {
                         if (firstChild === null)
                         {
-                            thisNode.appendChild(newChild[XML_NODE_INDEX]);
+                            thisNode.appendChild(w3cnodeexitdoc(newChild[XML_NODE_INDEX]));
                         }
                         else
                         {
-                            thisNode.insertBefore(newChild[XML_NODE_INDEX], firstChild);
+                            thisNode.insertBefore(w3cnodeexitdoc(newChild[XML_NODE_INDEX]), firstChild);
                         }
                         firstChild = newChild[XML_NODE_INDEX];
                     }
@@ -5490,11 +5509,11 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                     const e4xnode = call(xmlclass, tostring(child));
                     if (firstChild === null)
                     {
-                        thisNode.appendChild(e4xnode[XML_NODE_INDEX]);
+                        thisNode.appendChild(w3cnodeexitdoc(e4xnode[XML_NODE_INDEX]));
                     }
                     else
                     {
-                        thisNode.insertBefore(e4xnode[XML_NODE_INDEX], firstChild);
+                        thisNode.insertBefore(w3cnodeexitdoc(e4xnode[XML_NODE_INDEX]), firstChild);
                     }
                 }
                 return this;
@@ -5576,13 +5595,13 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                     }
                     for (const e4xchild of value[XMLLIST_XMLARRAY_INDEX])
                     {
-                        thisNode.appendChild(e4xchild[XML_NODE_INDEX]);
+                        thisNode.appendChild(w3cnodeexitdoc(e4xchild[XML_NODE_INDEX]));
                     }
                     return this;
                 }
 
                 value = call(xmlclass, value);
-                thisNode.appendChild(value[XML_NODE_INDEX]);
+                thisNode.appendChild(w3cnodeexitdoc(value[XML_NODE_INDEX]));
 
                 return this;
             }
