@@ -4345,14 +4345,14 @@ export const as3ns = userns("http://whack.net/AS3/2024/builtin");
 export const whackproxyns = userns("http://whack.net/2024/actionscript/whack/proxy");
 
 /**
- * The `js_from` namespace.
+ * The `JSBridgeFrom` namespace.
  */
-export const js_fromns = userns("http://whack.net/js/bridge/from");
+export const jsbridgefromns = userns("http://whack.net/js/bridge/from");
 
 /**
- * The `js_to` namespace.
+ * The `JSBridgeTo` namespace.
  */
-export const js_tons = userns("http://whack.net/js/bridge/to");
+export const jsbridgetons = userns("http://whack.net/js/bridge/to");
 
 // ----- Globals -----
 
@@ -9630,7 +9630,7 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
                 return [bytearrayclass, new Map(), ByteArray.zeroes(length)];
             },
         })],
-        [name(js_fromns, "arrayBuffer"), method(
+        [name(jsbridgefromns, "arrayBuffer"), method(
         {
             static: true,
             exec(arg)
@@ -9638,7 +9638,7 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
                 return [bytearrayclass, new Map(), ByteArray.from(arg)];
             },
         })],
-        [name(js_fromns, "byteArray"), method(
+        [name(jsbridgefromns, "byteArray"), method(
         {
             static: true,
             exec(arg)
@@ -9646,14 +9646,14 @@ export const bytearrayclass = defineclass(name($publicns, "ByteArray"),
                 return [bytearrayclass, new Map(), ByteArray.from(arg)];
             },
         })],
-        [name(js_tons, "arrayBuffer"), method(
+        [name(jsbridgetons, "arrayBuffer"), method(
         {
             exec()
             {
                 return this[BYTEARRAY_BA_INDEX].toArrayBuffer();
             },
         })],
-        [name(js_tons, "buffer"), method(
+        [name(jsbridgetons, "buffer"), method(
         {
             exec()
             {
