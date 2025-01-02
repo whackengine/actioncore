@@ -4347,12 +4347,12 @@ export const whackproxyns = userns("http://whack.net/2024/actionscript/whack/pro
 /**
  * The `js_from` namespace.
  */
-export const js_fromns = userns("http://whack.net/js/interop/from");
+export const js_fromns = userns("http://whack.net/js/bridge/from");
 
 /**
  * The `js_to` namespace.
  */
-export const js_tons = userns("http://whack.net/js/interop/to");
+export const js_tons = userns("http://whack.net/js/bridge/to");
 
 // ----- Globals -----
 
