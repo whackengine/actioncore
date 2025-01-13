@@ -1191,6 +1191,15 @@ export function inobject(base, name)
             let i = name >> 0;
             return i >= 0 && i < base[BYTEARRAY_BA_INDEX].length;
         }
+        if (ctor instanceof TupleType)
+        {
+            if (isNaN(Number(name)) || Number(name) != name >> 0)
+            {
+                return false;
+            }
+            let i = name >> 0;
+            return i >= 0 && i < ctor.elementtypes.length;
+        }
 
         // Test the "Class" object
         if (istype(base, classclass) && inobject(base[CLASS_CLASS_INDEX], name))
