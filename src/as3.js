@@ -1,12 +1,6 @@
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
 import { ByteArray, FlexNumberVector, assert, isXMLName } from "./util.js";
 
-// # Instance objects
-//
-// ActionScript instance objects are represented as a JavaScript Array
-// in the format `[constructor, dynamicProperties, fixture1, ...fixtureN]`.
-// Tuples are in the same compatible format, `[tupleType, unusedDynamicProperties, element1, ...elementN]`.
-
 // Object.prototype.constructor
 export const CONSTRUCTOR_INDEX = 0;
 
