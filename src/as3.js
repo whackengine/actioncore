@@ -647,7 +647,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get name()
     {
-        return this.original.name;
+        return this.original === vectorclass ? "Vector" : this.original.name;
     }
 
     get final()
@@ -1138,7 +1138,7 @@ export function inobject(base, name)
             return !!callproperty(base, whackproxyns, "hasProperty", name);
         }
 
-        // Test collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
+        // Test collection properties (Array, Vector[$double|$float|$int|$uint], Map)
         if (istype(base, arrayclass))
         {
             if (Number(name) != name >> 0)
@@ -1330,7 +1330,7 @@ export function hasownproperty(base, name)
             return !!callproperty(base, whackproxyns, "hasProperty", name);
         }
 
-        // Test collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
+        // Test collection properties (Array, Vector[$double|$float|$int|$uint], Map)
         if (istype(base, arrayclass))
         {
             if (isNaN(Number(name)) || Number(name) != name >> 0)
@@ -1669,7 +1669,7 @@ export function nameiterator(obj)
             const m = obj[MAP_PROPERTIES_INDEX];
             if (m instanceof WeakMap)
             {
-                throw new ReferenceError("Cannot enumerate entries of a weak Dictionary.");
+                throw new ReferenceError("Cannot enumerate entries of a weak Map.");
             }
             return m.keys();
         }
@@ -1729,7 +1729,7 @@ export function valueiterator(obj)
         {
             if (obj[MAP_PROPERTIES_INDEX] instanceof WeakMap)
             {
-                throw new TypeError("Cannot iterate a Dictionary of weak keys.");
+                throw new TypeError("Cannot iterate a Map of weak keys.");
             }
             return obj[MAP_PROPERTIES_INDEX].values();
         }
@@ -3183,7 +3183,7 @@ export function deleteproperty(base, qual, name)
                 return base[DYNAMIC_PROPERTIES_INDEX].delete(String(name));
             }
 
-            // Delete collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
+            // Delete collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
             if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -3309,7 +3309,7 @@ export function callproperty(base, qual, name, ...args)
                 }
             }
 
-            // Read collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
+            // Read collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
             if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -3547,7 +3547,7 @@ function preincreaseproperty(base, qual, name, incVal)
 
         if (notqual && !isproxy)
         {
-            // Assign collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
+            // Assign collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
             if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -3860,7 +3860,7 @@ function postincreaseproperty(base, qual, name, incVal)
 
         if (notqual && !isproxy)
         {
-            // Assign collection properties (Array, Vector[$double|$float|$int|$uint], Dictionary)
+            // Assign collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
             if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
