@@ -343,6 +343,19 @@ export class Names
     }
 }
 
+export class ActionCoreType
+{
+    isbasetypeof(type)
+    {
+        return type.issubtypeof(this);
+    }
+
+    issubtypeof(type)
+    {
+        return false;
+    }
+}
+
 /**
  * Encodes certain details of a class.
  * 
@@ -352,7 +365,7 @@ export class Names
  * the `constructor` property; the second element
  * are always the dynamic properties of the object.
  */
-export class Class
+export class Class extends ActionCoreType
 {
     baseclass = null;
     interfaces = [];
@@ -389,6 +402,7 @@ export class Class
 
     constructor(name, final, dynamic, metadata, ctor)
     {
+        super();
         this.name = name;
         this.final = final;
         this.dynamic = dynamic;
@@ -406,18 +420,38 @@ export class Class
         return result;
     }
 
-    isbaseclassof(arg)
+    isbasetypeof(arg)
     {
-        return arg.issubclassof(this);
+        if (arg instanceof TupleType)
+        {
+            return this === objectclass;
+        }
+        return arg.issubtypeof(this);
     }
 
-    issubclassof(arg)
+    issubtypeof(arg)
     {
-        for (const t of this.recursivedescclasslist())
+        if (arg instanceof Class)
         {
-            if (t === arg)
+            for (const t of this.recursivedescclasslist())
             {
-                return true;
+                if (t === arg)
+                {
+                    return true;
+                }
+            }
+        }
+        if (arg instanceof Interface)
+        {
+            for (const t of this.recursivedescclasslist())
+            {
+                for (const itrfc of t.interfaces)
+                {
+                    if (t === arg || t.issubtypeof(arg))
+                    {
+                        return true;
+                    }
+                }
             }
         }
         return false;
@@ -503,7 +537,7 @@ export function defineclass(name, options, items)
 /**
  * Encodes certain details of an interface.
  */
-export class Interface
+export class Interface extends ActionCoreType
 {
     baseinterfaces = [];
 
@@ -517,6 +551,7 @@ export class Interface
 
     constructor(name, metadata)
     {
+        super();
         this.name = name;
         this.metadata = metadata;
     }
@@ -531,18 +566,16 @@ export class Interface
         return result;
     }
 
-    isbasetypeof(arg)
-    {
-        return arg.issubtypeof(this);
-    }
-
     issubtypeof(arg)
     {
-        for (const t of this.recursivedescinterfacelist())
+        if (arg instanceof Interface)
         {
-            if (t === arg)
+            for (const t of this.recursivedescinterfacelist())
             {
-                return true;
+                if (t === arg)
+                {
+                    return true;
+                }
             }
         }
         return false;
@@ -583,6 +616,190 @@ export function defineinterface(name, options, items)
     globalnames.setnsname(name.ns, name.name, itrfc);
 
     return itrfc;
+}
+
+/**
+ * Represents a type substitution applied over `Array.<T>`, `Vector.<T>` and `Map.<K, V>`.
+ */
+export class SpecialTypeAfterSub extends ActionCoreType
+{
+    original;
+    argumentslist;
+    specialiseditems = null;
+    specialisedctor = null;
+
+    constructor(original, argumentslist)
+    {
+        super();
+        this.original = original;
+        this.argumentslist = argumentslist;
+    }
+
+    get baseclass()
+    {
+        return this.original.baseclass;
+    }
+
+    get interfaces()
+    {
+        return this.original.interfaces;
+    }
+
+    get name()
+    {
+        return this.original.name;
+    }
+
+    get final()
+    {
+        return this.original.final;
+    }
+
+    get dynamic()
+    {
+        return this.original.dynamic;
+    }
+
+    get metadata()
+    {
+        return this.original.metadata;
+    }
+
+    get ctor()
+    {
+        return this.original.ctor;
+    }
+
+    get staticnames()
+    {
+        return this.original.staticnames;
+    }
+
+    get ecmaprototype()
+    {
+        return this.original.ecmaprototype;
+    }
+
+    get prototypenames()
+    {
+        return this.original.prototypenames;
+    }
+
+    get staticvarvals()
+    {
+        return this.original.staticvarvals;
+    }
+
+    get prototypevarslots()
+    {
+        return this.original.prototypevarslots;
+    }
+
+    recursivedescclasslist()
+    {
+        const r = this.original.recursivedescclasslist();
+        r.shift();
+        r.unshift(this);
+        return r;
+    }
+
+    issubtypeof(arg)
+    {
+        return this.original.issubtypeof(arg);
+    }
+}
+
+/**
+ * @type {Map<ActionCoreType, SpecialTypeAfterSub[]>}
+ */
+const appliedtypes = new Map();
+
+export function applytype(original, argumentslist)
+{
+    assert([arrayclass, vectorclass, mapclass].indexOf(original) != -1, "Cannot apply types over given type.");
+
+    const paramlen = new Map([
+        [arrayclass, 1],
+        [vectorclass, 1],
+        [mapclass, 2],
+    ]).get(original);
+
+    assert(paramlen == argumentslist.length, "Incorrect number of type arguments.");
+
+    let list = appliedtypes.get(original);
+    if (list)
+    {
+        search: for (const t1 of list)
+        {
+            for (let i = 0; i < paramlen; i++)
+            {
+                if (t1.argumentslist[i] != argumentslist[i])
+                {
+                    continue search;
+                }
+            }
+            return t1;
+        }
+    }
+
+    list = list ?? [];
+    appliedtypes.set(original, list);
+    const r = new SpecialTypeAfterSub(original, argumentslist.slice(0));
+    list.push(r);
+    return r;
+}
+
+export class TupleType extends ActionCoreType
+{
+    elementtypes;
+
+    constructor(elementtypes)
+    {
+        super();
+        this.elementtypes = elementtypes;
+    }
+
+    get baseclass()
+    {
+        return objectclass;
+    }
+
+    get name()
+    {
+        return "Tuple" + randomHexID();
+    }
+
+    issubtypeof(arg)
+    {
+        return arg === this.baseclass;
+    }
+}
+
+const tupletypes = new Map();
+
+export function tupletype(elementtypes)
+{
+    const len = elementtypes.length;
+    let list = tupletypes.get(len);
+    if (list)
+    {
+        search: for (let t1 of list)
+        {
+            for (let i = 0; i < len; i++)
+            {
+                if (t1.elementtypes[i] !== elementtypes[i])
+                {
+                    continue search;
+                }
+            }
+            return t1;
+        }
+    }
+    list = list ?? [];
+    tupletypes.set(len, list);
+    const r = new TupleType(elementtypes);
+    list.push(r);
+    return r;
 }
 
 /**
@@ -877,9 +1094,9 @@ export function inobject(base, name)
             }
         }
 
-        if (istype(base, dictionaryclass))
+        if (istype(base, mapclass))
         {
-            const mm = base[DICTIONARY_PROPERTIES_INDEX];
+            const mm = base[MAP_PROPERTIES_INDEX];
             if (mm instanceof WeakMap && !(name instanceof Array))
             {
                 throw new ReferenceError("Weak key must be a managed Object.");
@@ -1075,9 +1292,9 @@ export function hasownproperty(base, name)
             }
         }
 
-        if (istype(base, dictionaryclass))
+        if (istype(base, mapclass))
         {
-            const mm = base[DICTIONARY_PROPERTIES_INDEX];
+            const mm = base[MAP_PROPERTIES_INDEX];
             if (mm instanceof WeakMap && !(name instanceof Array))
             {
                 throw new ReferenceError("Weak key must be a managed Object.");
@@ -1447,9 +1664,9 @@ export function nameiterator(obj)
         {
             return obj[BYTEARRAY_BA_INDEX].keys();
         }
-        if (istype(obj, dictionaryclass))
+        if (istype(obj, mapclass))
         {
-            const m = obj[DICTIONARY_PROPERTIES_INDEX];
+            const m = obj[MAP_PROPERTIES_INDEX];
             if (m instanceof WeakMap)
             {
                 throw new ReferenceError("Cannot enumerate entries of a weak Dictionary.");
@@ -1508,13 +1725,13 @@ export function valueiterator(obj)
         {
             return obj[BYTEARRAY_BA_INDEX].values();
         }
-        if (istype(obj, dictionaryclass))
+        if (istype(obj, mapclass))
         {
-            if (obj[DICTIONARY_PROPERTIES_INDEX] instanceof WeakMap)
+            if (obj[MAP_PROPERTIES_INDEX] instanceof WeakMap)
             {
                 throw new TypeError("Cannot iterate a Dictionary of weak keys.");
             }
-            return obj[DICTIONARY_PROPERTIES_INDEX].values();
+            return obj[MAP_PROPERTIES_INDEX].values();
         }
         if (istype(obj, proxyclass))
         {
@@ -2028,9 +2245,9 @@ export function hasmethod(base, qual, name)
                 return istype(base[DYNAMIC_PROPERTIES_INDEX].get(String(name)), functionclass);
             }
 
-            if (istype(base, dictionaryclass))
+            if (istype(base, mapclass))
             {
-                const mm = base[DICTIONARY_PROPERTIES_INDEX];
+                const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap)
                 {
                     return false;
@@ -2298,9 +2515,9 @@ export function getproperty(base, qual, name)
 
         if (notqual && !isproxy)
         {
-            if (istype(base, dictionaryclass))
+            if (istype(base, mapclass))
             {
-                const mm = base[DICTIONARY_PROPERTIES_INDEX];
+                const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -2581,9 +2798,9 @@ export function setproperty(base, qual, name, value)
 
         if (notqual && !isproxy)
         {
-            if (istype(base, dictionaryclass))
+            if (istype(base, mapclass))
             {
-                const mm = base[DICTIONARY_PROPERTIES_INDEX];
+                const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -2951,9 +3168,9 @@ export function deleteproperty(base, qual, name)
 
         if (notqual && !isproxy)
         {
-            if (istype(base, dictionaryclass))
+            if (istype(base, mapclass))
             {
-                const mm = base[DICTIONARY_PROPERTIES_INDEX];
+                const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -3381,9 +3598,9 @@ function preincreaseproperty(base, qual, name, incVal)
                 ba.set(i, v);
                 return v;
             }
-            if (istype(base, dictionaryclass))
+            if (istype(base, mapclass))
             {
-                const mm = base[DICTIONARY_PROPERTIES_INDEX];
+                const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -3696,9 +3913,9 @@ function postincreaseproperty(base, qual, name, incVal)
                 ba.set(i, v + incVal);
                 return v;
             }
-            if (istype(base, dictionaryclass))
+            if (istype(base, mapclass))
             {
-                const mm = base[DICTIONARY_PROPERTIES_INDEX];
+                const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -4062,7 +4279,7 @@ export function istype(value, type)
 
         if (type instanceof Class)
         {
-            return instanceClass.isbaseclassof(type);
+            return instanceClass.isbasetypeof(type);
         }
         if (type instanceof Interface)
         {
@@ -4127,7 +4344,7 @@ export function issubtype(value, type)
 
         if (type instanceof Class)
         {
-            return instanceClass.issubclassof(type);
+            return instanceClass.issubtypeof(type);
         }
         if (type instanceof Interface)
         {
@@ -4260,7 +4477,7 @@ export function tostring(arg)
         if (arg instanceof Array && arg[CONSTRUCTOR_INDEX] instanceof Class)
         {
             const name = (arg[CONSTRUCTOR_INDEX]).name;
-            return "[object " + name + "$" + randomHexID() + "]";
+            return "[object " + name + "]";
         }
         else
         {
@@ -6658,6 +6875,7 @@ export const ARRAY_SUBARRAY_INDEX = 2;
 export const arrayclass = defineclass(name($publicns, "Array"),
     {
         dynamic: true,
+        final: true,
 
         ctor(...args)
         {
@@ -9400,14 +9618,14 @@ export const verifyerrorclass = defineclass(name($publicns, "VerifyError"),
     ]
 );
 
-$publicns = packagens("whack.utils");
-
-export const DICTIONARY_PROPERTIES_INDEX = 2;
-export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
+export const MAP_PROPERTIES_INDEX = 2;
+export const mapclass = defineclass(name($publicns, "Map"),
     {
+        final: true,
+
         ctor(weakKeys = false)
         {
-            this[DICTIONARY_PROPERTIES_INDEX] = weakKeys ? new WeakMap() : new Map();
+            this[MAP_PROPERTIES_INDEX] = weakKeys ? new WeakMap() : new Map();
         },
     },
     [
@@ -9415,10 +9633,10 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec()
             {
-                const m =this[DICTIONARY_PROPERTIES_INDEX];
+                const m =this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap)
                 {
-                    throw new TypeError("Cannot retrieve the length of a weak Dictionary.");
+                    throw new TypeError("Cannot retrieve the length of a weak Map.");
                 }
                 return (m).size;
             },
@@ -9434,7 +9652,7 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec(key, ...args)
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap && !(key instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -9451,7 +9669,7 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec(key)
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap && !(key instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -9463,7 +9681,7 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec(key)
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap && !(key instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
@@ -9475,10 +9693,10 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec()
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap)
                 {
-                    throw new ReferenceError("Cannot enumerate entries of a weak Dictionary.");
+                    throw new ReferenceError("Cannot enumerate entries of a weak Map.");
                 }
                 const list = Array.from(m.entries()).map(entry => [arrayclass, new Map(), entry]);
                 return [arrayclass, new Map(), list];
@@ -9488,10 +9706,10 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec()
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap)
                 {
-                    throw new ReferenceError("Cannot enumerate keys of a weak Dictionary.");
+                    throw new ReferenceError("Cannot enumerate keys of a weak Map.");
                 }
                 return [arrayclass, new Map(), Array.from(m.keys())];
             },
@@ -9500,10 +9718,10 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec()
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap)
                 {
-                    throw new ReferenceError("Cannot enumerate values of a weak Dictionary.");
+                    throw new ReferenceError("Cannot enumerate values of a weak Map.");
                 }
                 return [arrayclass, new Map(), Array.from(m.values())];
             },
@@ -9512,16 +9730,18 @@ export const dictionaryclass = defineclass(name($publicns, "Dictionary"),
         {
             exec()
             {
-                const m = this[DICTIONARY_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap)
                 {
-                    throw new ReferenceError("Cannot clear a weak Dictionary.");
+                    throw new ReferenceError("Cannot clear a weak Map.");
                 }
                 m.clear();
             },
         })],
     ]
 );
+
+$publicns = packagens("whack.utils");
 
 // public function describeType(val:*):XML;
 definemethod($publicns, "describeType", {
@@ -10060,7 +10280,7 @@ const $builtinclasses = [
     typeerrorclass,
     urierrorclass,
     verifyerrorclass,
-    dictionaryclass,
+    mapclass,
     bytearrayclass,
     proxyclass,
 ];
