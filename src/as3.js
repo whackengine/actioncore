@@ -1228,7 +1228,7 @@ export function inobject(base, name)
         }
     }
     // Class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         if (String(name) == "prototype")
         {
@@ -1392,7 +1392,7 @@ export function hasownproperty(base, name)
         }
     }
     // Class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         if (String(name) == "prototype")
         {
@@ -2349,7 +2349,7 @@ export function hasmethod(base, qual, name)
         return false;
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
         if (notqual && String(name) == "prototype")
@@ -2433,7 +2433,7 @@ function qualincludespublic(qual)
 {
     if (qual instanceof Array)
     {
-        if (qual[CONSTRUCTOR_INDEX] instanceof Class)
+        if (qual[CONSTRUCTOR_INDEX] instanceof ActionCoreType)
         {
             return false;
         }
@@ -2671,7 +2671,7 @@ export function getproperty(base, qual, name)
         throw new ReferenceError("Access of undefined property " + name + ".");
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
         if (notqual && String(name) == "prototype")
@@ -2985,7 +2985,7 @@ export function setproperty(base, qual, name, value)
         throw new ReferenceError("Access of undefined property " + name + ".");
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
         if (notqual && String(name) == "prototype")
@@ -3254,7 +3254,7 @@ export function deleteproperty(base, qual, name)
         throw new ReferenceError("Access of undefined property " + name + ".");
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
         if (notqual && String(name) == "prototype")
@@ -3426,7 +3426,7 @@ export function callproperty(base, qual, name, ...args)
         throw new ReferenceError("Access of undefined property " + name + ".");
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
 
@@ -3745,7 +3745,7 @@ function preincreaseproperty(base, qual, name, incVal)
         throw new ReferenceError("Access of undefined property " + name + ".");
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
         if (notqual && String(name) == "prototype")
@@ -4053,7 +4053,7 @@ function postincreaseproperty(base, qual, name, incVal)
         throw new ReferenceError("Access of undefined property " + name + ".");
     }
     // class static
-    if (base instanceof Class)
+    if (base instanceof Class || base instanceof SpecialTypeAfterSub)
     {
         const notqual = qualincludespublic(qual);
         if (notqual && String(name) == "prototype")
@@ -5193,7 +5193,7 @@ export function reflectnamespace(ns)
     let uri = ns instanceof Systemns ? "" : ns instanceof Userns ? ns.uri : ns.uri;
     if (ns instanceof Systemns)
     {
-        let p = ns.parent instanceof Package ? ns.parent.name : ns.parent instanceof Class ? ns.parent.name : "";
+        let p = ns.parent instanceof Package ? ns.parent.name : ns.parent instanceof ActionCoreType ? ns.parent.name : "";
         uri = p + "$" + randomHexID();
     }
     return construct(namespaceclass, uri);
@@ -9846,11 +9846,15 @@ definemethod($publicns, "describeType", {
                 return construct(xmlclass, "<interface>" + metadata + "</interface>");
             }
 
-            // classobj instanceof Class
-            const metadata = describe_metadata(classobj.metadata);
-            const static_props = [];
-            const instance_props = [];
-            return construct(xmlclass, "<class>" + metadata + "<static>" + describe_props(classobj.staticnames) + "</static><instance>" + describe_props(classobj.prototypenames) + "</instance></class>");
+            if (classobj instanceof Class)
+            {
+                const metadata = describe_metadata(classobj.metadata);
+                const static_props = [];
+                const instance_props = [];
+                return construct(xmlclass, "<class>" + metadata + "<static>" + describe_props(classobj.staticnames) + "</static><instance>" + describe_props(classobj.prototypenames) + "</instance></class>");
+            }
+
+            return null;
         }
         else
         {
