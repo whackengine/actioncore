@@ -208,8 +208,12 @@ export class Names
 {
     m_dict = new Map();
 
-    constructor()
+    constructor(initialItems = [])
     {
+        for (const [name, trait] of initialItems)
+        {
+            this.setnsname(name.ns, name.name, trait);
+        }
     }
     
     dictionary()
@@ -626,6 +630,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
     original;
     argumentslist;
     specialisedprototypenames = null;
+    specialisedecmaprototype = null;
     specialisedctor = null;
 
     constructor(original, argumentslist)
@@ -647,7 +652,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get name()
     {
-        return this.original === vectorclass ? "Vector" : this.original.name;
+        return this.original.name;
     }
 
     get final()
@@ -677,7 +682,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get ecmaprototype()
     {
-        return this.original.ecmaprototype;
+        return this.specialisedecmaprototype ?? this.original.ecmaprototype;
     }
 
     get prototypenames()
@@ -1250,7 +1255,7 @@ export function hasownproperty(base, name)
 {
     if (base instanceof Array)
     {
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return Object.prototype.hasOwnProperty.call(base, name);
         }
@@ -1290,7 +1295,8 @@ export function hasownproperty(base, name)
             }
         }
 
-        if (istype(base, mapclass))
+        // Map.<K, V>
+        if (istypeinstantiatedfrom(ctor, mapclass))
         {
             const mm = base[MAP_PROPERTIES_INDEX];
             if (mm instanceof WeakMap && !(name instanceof Array))
@@ -1328,24 +1334,36 @@ export function hasownproperty(base, name)
             return !!callproperty(base, whackproxyns, "hasProperty", name);
         }
 
-        // Test collection properties (Array, Vector[$double|$float|$int|$uint], Map)
-        if (istype(base, arrayclass))
+        // Test collection properties (Array, Vector[$double|$float|$int|$uint])
+        if (ctor instanceof SpecialTypeAfterSub)
         {
-            if (isNaN(Number(name)) || Number(name) != name >> 0)
+            if (ctor.original === arrayclass)
             {
-                return false;
+                if (isNaN(Number(name)) || Number(name) != name >> 0)
+                {
+                    return false;
+                }
+                let i = name >> 0;
+                return i >= 0 && i < base[ARRAY_SUBARRAY_INDEX].length;
             }
-            let i = name >> 0;
-            return i >= 0 && i < base[ARRAY_SUBARRAY_INDEX].length;
+            if (ctor.original === vectorclass || ctor.original === vectordoubleclass || ctor.original === vectorfloatclass || ctor.original === vectorintclass || ctor.original === vectoruintclass)
+            {
+                if (isNaN(Number(name)) || Number(name) != name >> 0)
+                {
+                    return false;
+                }
+                let i = name >> 0;
+                return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
+            }
         }
-        if (istype(base, vectorclass) || istype(base, vectordoubleclass) || istype(base, vectorfloatclass) || istype(base, vectorintclass) || istype(base, vectoruintclass))
+        if (ctor instanceof TupleType)
         {
             if (isNaN(Number(name)) || Number(name) != name >> 0)
             {
                 return false;
             }
             let i = name >> 0;
-            return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
+            return i >= 0 && i < ctor.elementtypes.length;
         }
         if (istype(base, bytearrayclass))
         {
@@ -4174,7 +4192,7 @@ export function call(obj, ...args)
             }
             return construct(xmllistclass, args[0]);
         }
-        if (vectorclasses.indexOf(classobj) !== -1)
+        if (istypeinstantiatedfrom(classobj, vectorclass))
         {
             if (args.length == 1 && typeof args[0] == "number")
             {
@@ -7442,8 +7460,6 @@ setproperty(arrayclass, null, "NUMERIC", Array_NUMERIC);
 setproperty(arrayclass, null, "RETURNINDEXEDARRAY", Array_RETURNINDEXEDARRAY);
 setproperty(arrayclass, null, "UNIQUESORT", Array_UNIQUESORT);
 
-$publicns = packagens("__AS3__.vec");
-
 const fixedVectorMessage = "Cannot mutate size of fixed vector.";
 
 export const VECTOR_SUBARRAY_INDEX = 2;
@@ -7900,232 +7916,230 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
     ]
 );
 
-export const vectordoubleclass = defineclass(name($publicns, "Vector$double"),
+export const vectordoubleclass = applytype(vectorclass, [numberclass]);
+
+vectordoubleclass.specialisedctor = function(length = 0, fixed = false)
+{
+    this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Float64Array, Number(length), fixed);
+};
+
+vectordoubleclass.specialisedprototypenames = new Names([
+    [name($publicns, "length"), virtualvar(
     {
-        final: true,
-        ctor(length = 0, fixed = false)
+        type: uintclass,
+        getter: method(
         {
-            this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Float64Array, Number(length), fixed);
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].length;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                if (this[VECTOR_SUBARRAY_INDEX].fixed)
+                {
+                    throw new Error(fixedVectorMessage);
+                }
+                this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
+            },
+        }),
+    })],
+    [name($publicns, "fixed"), virtualvar(
+    {
+        type: booleanclass,
+        getter: method(
+        {
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].fixed;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
+            },
+        }),
+    })],
+    [name(as3ns, "concat"), method(
+    {
+        exec: Vectornumber_concat,
+    })],
+    [name(as3ns, "every"), method(
+    {
+        exec: Vectornumber_every,
+    })],
+    [name(as3ns, "filter"), method(
+    {
+        exec: Vectornumber_filter,
+    })],
+    [name(as3ns, "forEach"), method(
+    {
+        exec: Vectornumber_forEach,
+    })],
+    [name(as3ns, "includes"), method(
+    {
+        exec(item)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.includes(item);
         },
-    },
-    [
-        [name($publicns, "length"), virtualvar(
+    })],
+    [name(as3ns, "indexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0)
         {
-            type: uintclass,
-            getter: method(
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.indexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "insertAt"), method(
+    {
+        exec(index, element)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].length;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                    {
-                        throw new Error(fixedVectorMessage);
-                    }
-                    this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
-                },
-            }),
-        })],
-        [name($publicns, "fixed"), virtualvar(
-        {
-            type: booleanclass,
-            getter: method(
-            {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].fixed;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
-                },
-            }),
-        })],
-        [name(as3ns, "concat"), method(
-        {
-            exec: Vectornumber_concat,
-        })],
-        [name(as3ns, "every"), method(
-        {
-            exec: Vectornumber_every,
-        })],
-        [name(as3ns, "filter"), method(
-        {
-            exec: Vectornumber_filter,
-        })],
-        [name(as3ns, "forEach"), method(
-        {
-            exec: Vectornumber_forEach,
-        })],
-        [name(as3ns, "includes"), method(
-        {
-            exec(item)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.includes(item);
-            },
-        })],
-        [name(as3ns, "indexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.indexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "insertAt"), method(
-        {
-            exec(index, element)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.splice(index, 0, element);
-            },
-        })],
-        [name(as3ns, "join"), method(
-        {
-            exec(sep = ",")
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.join(sep ?? ",");
-            },
-        })],
-        [name(as3ns, "lastIndexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0x7FFFFFFF)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.lastIndexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "map"), method(
-        {
-            exec(...args)
-            {
-                const r = Vectornumber_map.apply(this, args);
-                return [vectordoubleclass, new Map(), r];
+                throw new Error(fixedVectorMessage);
             }
-        })],
-        [name(as3ns, "pop"), method(
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.splice(index, 0, element);
+        },
+    })],
+    [name(as3ns, "join"), method(
+    {
+        exec(sep = ",")
         {
-            exec()
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.join(sep ?? ",");
+        },
+    })],
+    [name(as3ns, "lastIndexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0x7FFFFFFF)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.lastIndexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "map"), method(
+    {
+        exec(...args)
+        {
+            const r = Vectornumber_map.apply(this, args);
+            return [vectordoubleclass, new Map(), r];
+        }
+    })],
+    [name(as3ns, "pop"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.pop();
-            },
-        })],
-        [name(as3ns, "push"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.pop();
+        },
+    })],
+    [name(as3ns, "push"), method(
+    {
+        exec(...args)
         {
-            exec(...args)
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.push(...args);
-            },
-        })],
-        [name(as3ns, "removeAt"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.push(...args);
+        },
+    })],
+    [name(as3ns, "removeAt"), method(
+    {
+        exec(index)
         {
-            exec(index)
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(index, 1);
-                return r.length == 0 ? 0 : r.get(0);
-            },
-        })],
-        [name(as3ns, "reverse"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(index, 1);
+            return r.length == 0 ? 0 : r.get(0);
+        },
+    })],
+    [name(as3ns, "reverse"), method(
+    {
+        exec()
         {
-            exec()
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.reverse();
+            return this;
+        },
+    })],
+    [name(as3ns, "shift"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.reverse();
-                return this;
-            },
-        })],
-        [name(as3ns, "shift"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.shift();
+        },
+    })],
+    [name(as3ns, "slice"), method(
+    {
+        exec(startIndex = 0, endIndex = 0x7FFFFFFF)
         {
-            exec()
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return [vectordoubleclass, new Map(), arr.slice(startIndex, endIndex)];
+        },
+    })],
+    [name(as3ns, "some"), method(
+    {
+        exec: Vectornumber_some,
+    })],
+    // sort(sortOptions)
+    // sort(compareFunction)
+    // sort(compareFunction, sortOptions)
+    [name(as3ns, "sort"), method(
+    {
+        exec: Vectornumber_sort,
+    })],
+    // sortOn(fieldName, sortOptions=)
+    [name(as3ns, "sortOn"), method(
+    {
+        exec: Vectornumber_sortOn,
+    })],
+    [name(as3ns, "splice"), method(
+    {
+        exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.shift();
-            },
-        })],
-        [name(as3ns, "slice"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(startIndex, deleteCount, ...items);
+            return [vectordoubleclass, new Map(), r];
+        },
+    })],
+    [name(as3ns, "unshift"), method(
+    {
+        exec(...args)
         {
-            exec(startIndex = 0, endIndex = 0x7FFFFFFF)
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return [vectordoubleclass, new Map(), arr.slice(startIndex, endIndex)];
-            },
-        })],
-        [name(as3ns, "some"), method(
-        {
-            exec: Vectornumber_some,
-        })],
-        // sort(sortOptions)
-        // sort(compareFunction)
-        // sort(compareFunction, sortOptions)
-        [name(as3ns, "sort"), method(
-        {
-            exec: Vectornumber_sort,
-        })],
-        // sortOn(fieldName, sortOptions=)
-        [name(as3ns, "sortOn"), method(
-        {
-            exec: Vectornumber_sortOn,
-        })],
-        [name(as3ns, "splice"), method(
-        {
-            exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(startIndex, deleteCount, ...items);
-                return [vectordoubleclass, new Map(), r];
-            },
-        })],
-        [name(as3ns, "unshift"), method(
-        {
-            exec(...args)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.unshift(...args);
-            },
-        })],
-    ]
-);
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.unshift(...args);
+        },
+    })],
+]);
 
 function Vectornumber_concat(...args)
 {
@@ -8434,688 +8448,680 @@ function Vectornumber_sortOn(fieldName, sortOptions = null)
     }
 }
 
-export const vectorfloatclass = defineclass(name($publicns, "Vector$float"),
-    {
-        final: true,
-        ctor(length = 0, fixed = false)
-        {
-            this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Float32Array, Number(length), fixed);
-        },
-    },
-    [
-        [name($publicns, "length"), virtualvar(
-        {
-            type: uintclass,
-            getter: method(
-            {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].length;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                    {
-                        throw new Error(fixedVectorMessage);
-                    }
-                    this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
-                },
-            }),
-        })],
-        [name($publicns, "fixed"), virtualvar(
-        {
-            type: booleanclass,
-            getter: method(
-            {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].fixed;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
-                },
-            }),
-        })],
-        [name(as3ns, "concat"), method(
-        {
-            exec: Vectorfloat_concat,
-        })],
-        [name(as3ns, "every"), method(
-        {
-            exec: Vectornumber_every,
-        })],
-        [name(as3ns, "filter"), method(
-        {
-            exec: Vectornumber_filter,
-        })],
-        [name(as3ns, "forEach"), method(
-        {
-            exec: Vectornumber_forEach,
-        })],
-        [name(as3ns, "includes"), method(
-        {
-            exec(item)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.includes(item);
-            },
-        })],
-        [name(as3ns, "indexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.indexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "insertAt"), method(
-        {
-            exec(index, element)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.splice(index, 0, element);
-            },
-        })],
-        [name(as3ns, "join"), method(
-        {
-            exec(sep = ",")
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.join(sep ?? ",");
-            },
-        })],
-        [name(as3ns, "lastIndexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0x7FFFFFFF)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.lastIndexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "map"), method(
-        {
-            exec(...args)
-            {
-                const r = Vectornumber_map.apply(this, args);
-                return [vectorfloatclass, new Map(), r];
-            }
-        })],
-        [name(as3ns, "pop"), method(
-        {
-            exec()
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.pop();
-            },
-        })],
-        [name(as3ns, "push"), method(
-        {
-            exec(...args)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.push(...args);
-            },
-        })],
-        [name(as3ns, "removeAt"), method(
-        {
-            exec(index)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(index, 1);
-                return r.length == 0 ? 0 : r.get(0);
-            },
-        })],
-        [name(as3ns, "reverse"), method(
-        {
-            exec()
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.reverse();
-                return this;
-            },
-        })],
-        [name(as3ns, "shift"), method(
-        {
-            exec()
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.shift();
-            },
-        })],
-        [name(as3ns, "slice"), method(
-        {
-            exec(startIndex = 0, endIndex = 0x7FFFFFFF)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return [vectorfloatclass, new Map(), arr.slice(startIndex, endIndex)];
-            },
-        })],
-        [name(as3ns, "some"), method(
-        {
-            exec: Vectornumber_some,
-        })],
-        // sort(sortOptions)
-        // sort(compareFunction)
-        // sort(compareFunction, sortOptions)
-        [name(as3ns, "sort"), method(
-        {
-            exec: Vectornumber_sort,
-        })],
-        // sortOn(fieldName, sortOptions=)
-        [name(as3ns, "sortOn"), method(
-        {
-            exec: Vectornumber_sortOn,
-        })],
-        [name(as3ns, "splice"), method(
-        {
-            exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(startIndex, deleteCount, ...items);
-                return [vectorfloatclass, new Map(), r];
-            },
-        })],
-        [name(as3ns, "unshift"), method(
-        {
-            exec(...args)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.unshift(...args);
-            },
-        })],
-    ]
-);
+export const vectorfloatclass = applytype(vectorclass, [floatclass]);
 
-export const vectorintclass = defineclass(name($publicns, "Vector$int"),
-    {
-        final: true,
-        ctor(length = 0, fixed = false)
-        {
-            this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Int32Array, Number(length), fixed);
-        },
-    },
-    [
-        [name($publicns, "length"), virtualvar(
-        {
-            type: uintclass,
-            getter: method(
-            {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].length;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                    {
-                        throw new Error(fixedVectorMessage);
-                    }
-                    this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
-                },
-            }),
-        })],
-        [name($publicns, "fixed"), virtualvar(
-        {
-            type: booleanclass,
-            getter: method(
-            {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].fixed;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
-                },
-            }),
-        })],
-        [name(as3ns, "concat"), method(
-        {
-            exec: Vectorint_concat,
-        })],
-        [name(as3ns, "every"), method(
-        {
-            exec: Vectornumber_every,
-        })],
-        [name(as3ns, "filter"), method(
-        {
-            exec: Vectornumber_filter,
-        })],
-        [name(as3ns, "forEach"), method(
-        {
-            exec: Vectornumber_forEach,
-        })],
-        [name(as3ns, "includes"), method(
-        {
-            exec(item)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.includes(item);
-            },
-        })],
-        [name(as3ns, "indexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.indexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "insertAt"), method(
-        {
-            exec(index, element)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.splice(index, 0, element);
-            },
-        })],
-        [name(as3ns, "join"), method(
-        {
-            exec(sep = ",")
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.join(sep ?? ",");
-            },
-        })],
-        [name(as3ns, "lastIndexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0x7FFFFFFF)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.lastIndexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "map"), method(
-        {
-            exec(...args)
-            {
-                const r = Vectornumber_map.apply(this, args);
-                return [vectorintclass, new Map(), r];
-            }
-        })],
-        [name(as3ns, "pop"), method(
-        {
-            exec()
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.pop();
-            },
-        })],
-        [name(as3ns, "push"), method(
-        {
-            exec(...args)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.push(...args);
-            },
-        })],
-        [name(as3ns, "removeAt"), method(
-        {
-            exec(index)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(index, 1);
-                return r.length == 0 ? 0 : r.get(0);
-            },
-        })],
-        [name(as3ns, "reverse"), method(
-        {
-            exec()
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.reverse();
-                return this;
-            },
-        })],
-        [name(as3ns, "shift"), method(
-        {
-            exec()
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.shift();
-            },
-        })],
-        [name(as3ns, "slice"), method(
-        {
-            exec(startIndex = 0, endIndex = 0x7FFFFFFF)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return [vectorintclass, new Map(), arr.slice(startIndex, endIndex)];
-            },
-        })],
-        [name(as3ns, "some"), method(
-        {
-            exec: Vectornumber_some,
-        })],
-        // sort(sortOptions)
-        // sort(compareFunction)
-        // sort(compareFunction, sortOptions)
-        [name(as3ns, "sort"), method(
-        {
-            exec: Vectornumber_sort,
-        })],
-        // sortOn(fieldName, sortOptions=)
-        [name(as3ns, "sortOn"), method(
-        {
-            exec: Vectornumber_sortOn,
-        })],
-        [name(as3ns, "splice"), method(
-        {
-            exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(startIndex, deleteCount, ...items);
-                return [vectorintclass, new Map(), r];
-            },
-        })],
-        [name(as3ns, "unshift"), method(
-        {
-            exec(...args)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.unshift(...args);
-            },
-        })],
-    ]
-);
+vectorfloatclass.specialisedctor = function(length = 0, fixed = false)
+{
+    this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Float32Array, Number(length), fixed);
+};
 
-export const vectoruintclass = defineclass(name($publicns, "Vector$uint"),
+vectorfloatclass.specialisedprototypenames = new Names([
+    [name($publicns, "length"), virtualvar(
     {
-        final: true,
-        ctor(length = 0, fixed = false)
+        type: uintclass,
+        getter: method(
         {
-            this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Uint32Array, Number(length), fixed);
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].length;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                if (this[VECTOR_SUBARRAY_INDEX].fixed)
+                {
+                    throw new Error(fixedVectorMessage);
+                }
+                this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
+            },
+        }),
+    })],
+    [name($publicns, "fixed"), virtualvar(
+    {
+        type: booleanclass,
+        getter: method(
+        {
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].fixed;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
+            },
+        }),
+    })],
+    [name(as3ns, "concat"), method(
+    {
+        exec: Vectorfloat_concat,
+    })],
+    [name(as3ns, "every"), method(
+    {
+        exec: Vectornumber_every,
+    })],
+    [name(as3ns, "filter"), method(
+    {
+        exec: Vectornumber_filter,
+    })],
+    [name(as3ns, "forEach"), method(
+    {
+        exec: Vectornumber_forEach,
+    })],
+    [name(as3ns, "includes"), method(
+    {
+        exec(item)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.includes(item);
         },
-    },
-    [
-        [name($publicns, "length"), virtualvar(
+    })],
+    [name(as3ns, "indexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0)
         {
-            type: uintclass,
-            getter: method(
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.indexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "insertAt"), method(
+    {
+        exec(index, element)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].length;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                    {
-                        throw new Error(fixedVectorMessage);
-                    }
-                    this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
-                },
-            }),
-        })],
-        [name($publicns, "fixed"), virtualvar(
-        {
-            type: booleanclass,
-            getter: method(
-            {
-                exec()
-                {
-                    return this[VECTOR_SUBARRAY_INDEX].fixed;
-                },
-            }),
-            setter: method(
-            {
-                exec(val)
-                {
-                    this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
-                },
-            }),
-        })],
-        [name(as3ns, "concat"), method(
-        {
-            exec: Vectoruint_concat,
-        })],
-        [name(as3ns, "every"), method(
-        {
-            exec: Vectornumber_every,
-        })],
-        [name(as3ns, "filter"), method(
-        {
-            exec: Vectornumber_filter,
-        })],
-        [name(as3ns, "forEach"), method(
-        {
-            exec: Vectornumber_forEach,
-        })],
-        [name(as3ns, "includes"), method(
-        {
-            exec(item)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.includes(item);
-            },
-        })],
-        [name(as3ns, "indexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.indexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "insertAt"), method(
-        {
-            exec(index, element)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.splice(index, 0, element);
-            },
-        })],
-        [name(as3ns, "join"), method(
-        {
-            exec(sep = ",")
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.join(sep ?? ",");
-            },
-        })],
-        [name(as3ns, "lastIndexOf"), method(
-        {
-            exec(searchElement, fromIndex = 0x7FFFFFFF)
-            {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.lastIndexOf(searchElement, fromIndex);
-            },
-        })],
-        [name(as3ns, "map"), method(
-        {
-            exec(...args)
-            {
-                const r = Vectornumber_map.apply(this, args);
-                return [vectoruintclass, new Map(), r];
+                throw new Error(fixedVectorMessage);
             }
-        })],
-        [name(as3ns, "pop"), method(
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.splice(index, 0, element);
+        },
+    })],
+    [name(as3ns, "join"), method(
+    {
+        exec(sep = ",")
         {
-            exec()
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.join(sep ?? ",");
+        },
+    })],
+    [name(as3ns, "lastIndexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0x7FFFFFFF)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.lastIndexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "map"), method(
+    {
+        exec(...args)
+        {
+            const r = Vectornumber_map.apply(this, args);
+            return [vectorfloatclass, new Map(), r];
+        }
+    })],
+    [name(as3ns, "pop"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.pop();
-            },
-        })],
-        [name(as3ns, "push"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.pop();
+        },
+    })],
+    [name(as3ns, "push"), method(
+    {
+        exec(...args)
         {
-            exec(...args)
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.push(...args);
-            },
-        })],
-        [name(as3ns, "removeAt"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.push(...args);
+        },
+    })],
+    [name(as3ns, "removeAt"), method(
+    {
+        exec(index)
         {
-            exec(index)
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(index, 1);
-                return r.length == 0 ? 0 : r.get(0);
-            },
-        })],
-        [name(as3ns, "reverse"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(index, 1);
+            return r.length == 0 ? 0 : r.get(0);
+        },
+    })],
+    [name(as3ns, "reverse"), method(
+    {
+        exec()
         {
-            exec()
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.reverse();
+            return this;
+        },
+    })],
+    [name(as3ns, "shift"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                arr.reverse();
-                return this;
-            },
-        })],
-        [name(as3ns, "shift"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.shift();
+        },
+    })],
+    [name(as3ns, "slice"), method(
+    {
+        exec(startIndex = 0, endIndex = 0x7FFFFFFF)
         {
-            exec()
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return [vectorfloatclass, new Map(), arr.slice(startIndex, endIndex)];
+        },
+    })],
+    [name(as3ns, "some"), method(
+    {
+        exec: Vectornumber_some,
+    })],
+    // sort(sortOptions)
+    // sort(compareFunction)
+    // sort(compareFunction, sortOptions)
+    [name(as3ns, "sort"), method(
+    {
+        exec: Vectornumber_sort,
+    })],
+    // sortOn(fieldName, sortOptions=)
+    [name(as3ns, "sortOn"), method(
+    {
+        exec: Vectornumber_sortOn,
+    })],
+    [name(as3ns, "splice"), method(
+    {
+        exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.shift();
-            },
-        })],
-        [name(as3ns, "slice"), method(
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(startIndex, deleteCount, ...items);
+            return [vectorfloatclass, new Map(), r];
+        },
+    })],
+    [name(as3ns, "unshift"), method(
+    {
+        exec(...args)
         {
-            exec(startIndex = 0, endIndex = 0x7FFFFFFF)
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
             {
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return [vectoruintclass, new Map(), arr.slice(startIndex, endIndex)];
-            },
-        })],
-        [name(as3ns, "some"), method(
-        {
-            exec: Vectornumber_some,
-        })],
-        // sort(sortOptions)
-        // sort(compareFunction)
-        // sort(compareFunction, sortOptions)
-        [name(as3ns, "sort"), method(
-        {
-            exec: Vectornumber_sort,
-        })],
-        // sortOn(fieldName, sortOptions=)
-        [name(as3ns, "sortOn"), method(
-        {
-            exec: Vectornumber_sortOn,
-        })],
-        [name(as3ns, "splice"), method(
-        {
-            exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                const r = arr.splice(startIndex, deleteCount, ...items);
-                return [vectoruintclass, new Map(), r];
-            },
-        })],
-        [name(as3ns, "unshift"), method(
-        {
-            exec(...args)
-            {
-                if (this[VECTOR_SUBARRAY_INDEX].fixed)
-                {
-                    throw new Error(fixedVectorMessage);
-                }
-                const arr = this[VECTOR_SUBARRAY_INDEX];
-                return arr.unshift(...args);
-            },
-        })],
-    ]
-);
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.unshift(...args);
+        },
+    })],
+]);
 
-export const vectorclasses = [vectorclass, vectordoubleclass, vectorfloatclass, vectorintclass, vectoruintclass];
+export const vectorintclass = applytype(vectorclass, [intclass]);
+
+vectorintclass.specialisedctor = function(length = 0, fixed = false)
+{
+    this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Int32Array, Number(length), fixed);
+};
+
+vectorintclass.specialisedprototypenames = new Names([
+    [name($publicns, "length"), virtualvar(
+    {
+        type: uintclass,
+        getter: method(
+        {
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].length;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                if (this[VECTOR_SUBARRAY_INDEX].fixed)
+                {
+                    throw new Error(fixedVectorMessage);
+                }
+                this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
+            },
+        }),
+    })],
+    [name($publicns, "fixed"), virtualvar(
+    {
+        type: booleanclass,
+        getter: method(
+        {
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].fixed;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
+            },
+        }),
+    })],
+    [name(as3ns, "concat"), method(
+    {
+        exec: Vectorint_concat,
+    })],
+    [name(as3ns, "every"), method(
+    {
+        exec: Vectornumber_every,
+    })],
+    [name(as3ns, "filter"), method(
+    {
+        exec: Vectornumber_filter,
+    })],
+    [name(as3ns, "forEach"), method(
+    {
+        exec: Vectornumber_forEach,
+    })],
+    [name(as3ns, "includes"), method(
+    {
+        exec(item)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.includes(item);
+        },
+    })],
+    [name(as3ns, "indexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.indexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "insertAt"), method(
+    {
+        exec(index, element)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.splice(index, 0, element);
+        },
+    })],
+    [name(as3ns, "join"), method(
+    {
+        exec(sep = ",")
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.join(sep ?? ",");
+        },
+    })],
+    [name(as3ns, "lastIndexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0x7FFFFFFF)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.lastIndexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "map"), method(
+    {
+        exec(...args)
+        {
+            const r = Vectornumber_map.apply(this, args);
+            return [vectorintclass, new Map(), r];
+        }
+    })],
+    [name(as3ns, "pop"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.pop();
+        },
+    })],
+    [name(as3ns, "push"), method(
+    {
+        exec(...args)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.push(...args);
+        },
+    })],
+    [name(as3ns, "removeAt"), method(
+    {
+        exec(index)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(index, 1);
+            return r.length == 0 ? 0 : r.get(0);
+        },
+    })],
+    [name(as3ns, "reverse"), method(
+    {
+        exec()
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.reverse();
+            return this;
+        },
+    })],
+    [name(as3ns, "shift"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.shift();
+        },
+    })],
+    [name(as3ns, "slice"), method(
+    {
+        exec(startIndex = 0, endIndex = 0x7FFFFFFF)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return [vectorintclass, new Map(), arr.slice(startIndex, endIndex)];
+        },
+    })],
+    [name(as3ns, "some"), method(
+    {
+        exec: Vectornumber_some,
+    })],
+    // sort(sortOptions)
+    // sort(compareFunction)
+    // sort(compareFunction, sortOptions)
+    [name(as3ns, "sort"), method(
+    {
+        exec: Vectornumber_sort,
+    })],
+    // sortOn(fieldName, sortOptions=)
+    [name(as3ns, "sortOn"), method(
+    {
+        exec: Vectornumber_sortOn,
+    })],
+    [name(as3ns, "splice"), method(
+    {
+        exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(startIndex, deleteCount, ...items);
+            return [vectorintclass, new Map(), r];
+        },
+    })],
+    [name(as3ns, "unshift"), method(
+    {
+        exec(...args)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.unshift(...args);
+        },
+    })],
+]);
+
+export const vectoruintclass = applytype(vectorclass, [uintclass]);
+
+vectoruintclass.specialisedctor = function(length = 0, fixed = false)
+{
+    this[VECTOR_SUBARRAY_INDEX] = new FlexNumberVector(Uint32Array, Number(length), fixed);
+};
+
+vectoruintclass.specialisedprototypenames = new Names([
+    [name($publicns, "length"), virtualvar(
+    {
+        type: uintclass,
+        getter: method(
+        {
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].length;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                if (this[VECTOR_SUBARRAY_INDEX].fixed)
+                {
+                    throw new Error(fixedVectorMessage);
+                }
+                this[VECTOR_SUBARRAY_INDEX].length = val >>> 0;
+            },
+        }),
+    })],
+    [name($publicns, "fixed"), virtualvar(
+    {
+        type: booleanclass,
+        getter: method(
+        {
+            exec()
+            {
+                return this[VECTOR_SUBARRAY_INDEX].fixed;
+            },
+        }),
+        setter: method(
+        {
+            exec(val)
+            {
+                this[VECTOR_SUBARRAY_INDEX].fixed = !!val;
+            },
+        }),
+    })],
+    [name(as3ns, "concat"), method(
+    {
+        exec: Vectoruint_concat,
+    })],
+    [name(as3ns, "every"), method(
+    {
+        exec: Vectornumber_every,
+    })],
+    [name(as3ns, "filter"), method(
+    {
+        exec: Vectornumber_filter,
+    })],
+    [name(as3ns, "forEach"), method(
+    {
+        exec: Vectornumber_forEach,
+    })],
+    [name(as3ns, "includes"), method(
+    {
+        exec(item)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.includes(item);
+        },
+    })],
+    [name(as3ns, "indexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.indexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "insertAt"), method(
+    {
+        exec(index, element)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.splice(index, 0, element);
+        },
+    })],
+    [name(as3ns, "join"), method(
+    {
+        exec(sep = ",")
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.join(sep ?? ",");
+        },
+    })],
+    [name(as3ns, "lastIndexOf"), method(
+    {
+        exec(searchElement, fromIndex = 0x7FFFFFFF)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.lastIndexOf(searchElement, fromIndex);
+        },
+    })],
+    [name(as3ns, "map"), method(
+    {
+        exec(...args)
+        {
+            const r = Vectornumber_map.apply(this, args);
+            return [vectoruintclass, new Map(), r];
+        }
+    })],
+    [name(as3ns, "pop"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.pop();
+        },
+    })],
+    [name(as3ns, "push"), method(
+    {
+        exec(...args)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.push(...args);
+        },
+    })],
+    [name(as3ns, "removeAt"), method(
+    {
+        exec(index)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(index, 1);
+            return r.length == 0 ? 0 : r.get(0);
+        },
+    })],
+    [name(as3ns, "reverse"), method(
+    {
+        exec()
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            arr.reverse();
+            return this;
+        },
+    })],
+    [name(as3ns, "shift"), method(
+    {
+        exec()
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.shift();
+        },
+    })],
+    [name(as3ns, "slice"), method(
+    {
+        exec(startIndex = 0, endIndex = 0x7FFFFFFF)
+        {
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return [vectoruintclass, new Map(), arr.slice(startIndex, endIndex)];
+        },
+    })],
+    [name(as3ns, "some"), method(
+    {
+        exec: Vectornumber_some,
+    })],
+    // sort(sortOptions)
+    // sort(compareFunction)
+    // sort(compareFunction, sortOptions)
+    [name(as3ns, "sort"), method(
+    {
+        exec: Vectornumber_sort,
+    })],
+    // sortOn(fieldName, sortOptions=)
+    [name(as3ns, "sortOn"), method(
+    {
+        exec: Vectornumber_sortOn,
+    })],
+    [name(as3ns, "splice"), method(
+    {
+        exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            const r = arr.splice(startIndex, deleteCount, ...items);
+            return [vectoruintclass, new Map(), r];
+        },
+    })],
+    [name(as3ns, "unshift"), method(
+    {
+        exec(...args)
+        {
+            if (this[VECTOR_SUBARRAY_INDEX].fixed)
+            {
+                throw new Error(fixedVectorMessage);
+            }
+            const arr = this[VECTOR_SUBARRAY_INDEX];
+            return arr.unshift(...args);
+        },
+    })],
+]);
 
 $publicns = packagens("");
 
@@ -10260,10 +10266,6 @@ const $builtinclasses = [
     functionclass,
     arrayclass,
     vectorclass,
-    vectordoubleclass,
-    vectorfloatclass,
-    vectorintclass,
-    vectoruintclass,
     promiseclass,
     regexpclass,
     errorclass,
@@ -10346,49 +10348,57 @@ setdynamicproperty(vectorclass.ecmaprototype, "toString", [functionclass, new Ma
     return arr.map(v => tostring(v)).join(",");
 }]);
 
-setdynamicproperty(vectordoubleclass.ecmaprototype, "toLocaleString", [functionclass, new Map(), function()
+vectordoubleclass.specialisedecmaprototype = construct(objectclass);
+
+setdynamicproperty(vectordoubleclass.specialisedecmaprototype, "toLocaleString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectordoubleclass.ecmaprototype, "toString", [functionclass, new Map(), function()
+setdynamicproperty(vectordoubleclass.specialisedecmaprototype, "toString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectorfloatclass.ecmaprototype, "toLocaleString", [functionclass, new Map(), function()
+vectorfloatclass.specialisedecmaprototype = construct(objectclass);
+
+setdynamicproperty(vectorfloatclass.specialisedecmaprototype, "toLocaleString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectorfloatclass.ecmaprototype, "toString", [functionclass, new Map(), function()
+setdynamicproperty(vectorfloatclass.specialisedecmaprototype, "toString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectorintclass.ecmaprototype, "toLocaleString", [functionclass, new Map(), function()
+vectorintclass.specialisedecmaprototype = construct(objectclass);
+
+setdynamicproperty(vectorintclass.specialisedecmaprototype, "toLocaleString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectorintclass.ecmaprototype, "toString", [functionclass, new Map(), function()
+setdynamicproperty(vectorintclass.specialisedecmaprototype, "toString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectoruintclass.ecmaprototype, "toLocaleString", [functionclass, new Map(), function()
+vectoruintclass.specialisedecmaprototype = construct(objectclass);
+
+setdynamicproperty(vectoruintclass.specialisedecmaprototype, "toLocaleString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");
 }]);
 
-setdynamicproperty(vectoruintclass.ecmaprototype, "toString", [functionclass, new Map(), function()
+setdynamicproperty(vectoruintclass.specialisedecmaprototype, "toString", [functionclass, new Map(), function()
 {
     const arr = this[VECTOR_SUBARRAY_INDEX];
     return arr.join(",");

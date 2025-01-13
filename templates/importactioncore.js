@@ -66,7 +66,6 @@ import {
     vectorfloatclass,
     vectorintclass,
     vectoruintclass,
-    vectorclasses,
     promiseclass,
     REGEXP_REGEXP_INDEX,
     regexpclass,
