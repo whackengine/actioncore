@@ -625,7 +625,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 {
     original;
     argumentslist;
-    specialiseditems = null;
+    specialisedprototypenames = null;
     specialisedctor = null;
 
     constructor(original, argumentslist)
@@ -667,7 +667,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get ctor()
     {
-        return this.original.ctor;
+        return this.specialisedctor ?? this.original.ctor;
     }
 
     get staticnames()
@@ -682,7 +682,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get prototypenames()
     {
-        return this.original.prototypenames;
+        return this.specialisedprototypenames ?? this.original.prototypenames;
     }
 
     get staticvarvals()
@@ -692,7 +692,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get prototypevarslots()
     {
-        return this.original.prototypevarslots;
+        return this.specialisedprototypenames !== null ? [] : this.original.prototypevarslots;
     }
 
     recursivedescclasslist()
@@ -1046,6 +1046,11 @@ function w3cnodeexitdoc(w3cnode)
     return w3cnode;
 }
 
+function istypeinstantiatedfrom(type, fromType)
+{
+    return type instanceof SpecialTypeAfterSub && type.original === fromType;
+}
+
 /**
  * Checks whether an object has or inherits a given property name.
  * 
@@ -1056,7 +1061,7 @@ export function inobject(base, name)
 {
     if (base instanceof Array)
     {
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return name in base;
         }
@@ -1094,7 +1099,7 @@ export function inobject(base, name)
             }
         }
 
-        if (istype(base, mapclass))
+        if (istypeinstantiatedfrom(ctor, mapclass))
         {
             const mm = base[MAP_PROPERTIES_INDEX];
             if (mm instanceof WeakMap && !(name instanceof Array))
@@ -1138,8 +1143,8 @@ export function inobject(base, name)
             return !!callproperty(base, whackproxyns, "hasProperty", name);
         }
 
-        // Test collection properties (Array, Vector[$double|$float|$int|$uint], Map)
-        if (istype(base, arrayclass))
+        // Test collection properties (Array, Vector[$double|$float|$int|$uint])
+        if (istypeinstantiatedfrom(ctor, arrayclass))
         {
             if (Number(name) != name >> 0)
             {
@@ -1148,47 +1153,31 @@ export function inobject(base, name)
             let i = name >> 0;
             return i >= 0 && i < base[ARRAY_SUBARRAY_INDEX].length;
         }
-        if (istype(base, vectorclass))
+        if (istypeinstantiatedfrom(ctor, vectorclass))
         {
             if (Number(name) != name >> 0)
             {
                 return false;
             }
-            let i = name >> 0;
-            return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
-        }
-        if (istype(base, vectordoubleclass))
-        {
-            if (Number(name) != name >> 0)
+            if (ctor === vectordoubleclass)
             {
-                return false;
+                let i = name >> 0;
+                return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
             }
-            let i = name >> 0;
-            return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
-        }
-        if (istype(base, vectorfloatclass))
-        {
-            if (Number(name) != name >> 0)
+            if (ctor === vectorfloatclass)
             {
-                return false;
+                let i = name >> 0;
+                return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
             }
-            let i = name >> 0;
-            return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
-        }
-        if (istype(base, vectorintclass))
-        {
-            if (Number(name) != name >> 0)
+            if (ctor === vectorintclass)
             {
-                return false;
+                let i = name >> 0;
+                return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
             }
-            let i = name >> 0;
-            return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
-        }
-        if (istype(base, vectoruintclass))
-        {
-            if (Number(name) != name >> 0)
+            if (ctor === vectoruintclass)
             {
-                return false;
+                let i = name >> 0;
+                return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
             }
             let i = name >> 0;
             return i >= 0 && i < base[VECTOR_SUBARRAY_INDEX].length;
