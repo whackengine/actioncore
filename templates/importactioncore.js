@@ -139,7 +139,6 @@ import {
     deletedynamicproperty,
     hasdynamicproperty,
     istype,
-    issubtype,
     coerce,
     construct,
     tostring,

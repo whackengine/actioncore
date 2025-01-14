@@ -4556,21 +4556,26 @@ export function tostring(arg)
     }
     if (!hasmethod(arg, null, "toString"))
     {
-        const ctor = arg[CONSTRUCTOR_INDEX];
-
-        // Tuple returns a comma-separated list of elements
-        if (ctor instanceof TupleType)
-        {
-            return arg.slice(2).map(v => tostring(v)).join(",");
-        }
-        // Other types print [object f.q.N] by default
-        if (arg instanceof Array && ctor instanceof ActionCoreType)
-        {
-            return "[object " + ctor.name + "]";
-        }
-        return String(arg);
+        return tostring_objimpl(arg);
     }
     return String(callproperty(arg, null, "toString"));
+}
+
+function tostring_objimpl(arg)
+{
+    const ctor = arg[CONSTRUCTOR_INDEX];
+
+    // Tuple returns a comma-separated list of elements
+    if (ctor instanceof TupleType)
+    {
+        return arg.slice(2).map(v => tostring(v)).join(",");
+    }
+    // Other types print [object f.q.N] by default
+    if (arg instanceof Array && ctor instanceof ActionCoreType)
+    {
+        return "[object " + ctor.name + "]";
+    }
+    return String(arg);
 }
 
 class ArgumentError extends Error
@@ -10472,7 +10477,7 @@ setdynamicproperty(objectclass.ecmaprototype, "toLocaleString", [functionclass, 
 
 setdynamicproperty(objectclass.ecmaprototype, "toString", [functionclass, new Map(), function()
 {
-    return tostring(this);
+    return tostring_objimpl(this);
 }]);
 
 setdynamicproperty(objectclass.ecmaprototype, "valueOf", [functionclass, new Map(), function()
