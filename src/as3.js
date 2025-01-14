@@ -7106,6 +7106,48 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return [applytype(arrayclass, [objectclass]), new Map(), r];
             }
         })],
+        [$.name($publicns, "tupleTypeElements"), $.method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return null;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                if (type instanceof TupleType)
+                {
+                    return [applytype(arrayclass, [classclass]), new Map(), type.elementtypes.map(t => reflectclass(t))];
+                }
+                return null;
+            },
+        })],
+        [$.name($publicns, "superType"), $.method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return null;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                if (type instanceof Interface)
+                {
+                    return null;
+                }
+                return type.baseclass ? reflectclass(type.baseclass) : null;
+            }
+        })],
         [$.name($publicns, "isArrayType"), $.method({
             static: true,
 
@@ -7138,6 +7180,23 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 }
                 type = type[CLASS_CLASS_INDEX];
                 return istypeinstantiatedfrom(type, mapclass);
+            },
+        })],
+        [$.name($publicns, "isTupleType"), $.method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return false;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                return type instanceof TupleType;
             },
         })],
         [$.name($publicns, "isVectorType"), $.method({
