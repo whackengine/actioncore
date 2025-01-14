@@ -1674,15 +1674,16 @@ export function nameiterator(obj)
 {
     if (obj instanceof Array)
     {
-        if (!(obj[CONSTRUCTOR_INDEX] instanceof Class))
+        const ctor = obj[CONSTRUCTOR_INDEX];
+        if (!(ctor instanceof ActionCoreType))
         {
             return es3nameiterator(obj);
         }
-        if (istype(obj, arrayclass))
+        if (istypeinstantiatedfrom(ctor, arrayclass))
         {
             return obj[ARRAY_SUBARRAY_INDEX].keys();
         }
-        if (istype(obj, vectorclass) || istype(obj, vectordoubleclass) || istype(obj, vectorfloatclass) || istype(obj, vectorintclass) || istype(obj, vectoruintclass))
+        if (istypeinstantiatedfrom(ctor, vectorclass))
         {
             return obj[VECTOR_SUBARRAY_INDEX].keys();
         }
@@ -1690,7 +1691,7 @@ export function nameiterator(obj)
         {
             return obj[BYTEARRAY_BA_INDEX].keys();
         }
-        if (istype(obj, mapclass))
+        if (istypeinstantiatedfrom(ctor, mapclass))
         {
             const m = obj[MAP_PROPERTIES_INDEX];
             if (m instanceof WeakMap)
@@ -1735,15 +1736,16 @@ export function valueiterator(obj)
 {
     if (obj instanceof Array)
     {
-        if (!(obj[CONSTRUCTOR_INDEX] instanceof Class))
+        const ctor = obj[CONSTRUCTOR_INDEX];
+        if (!(ctor instanceof ActionCoreType))
         {
             return es3valueiterator(obj);
         }
-        if (istype(obj, arrayclass))
+        if (istypeinstantiatedfrom(ctor, arrayclass))
         {
             return obj[ARRAY_SUBARRAY_INDEX].values();
         }
-        if (istype(obj, vectorclass) || istype(obj, vectordoubleclass) || istype(obj, vectorfloatclass) || istype(obj, vectorintclass) || istype(obj, vectoruintclass))
+        if (istypeinstantiatedfrom(ctor, vectorclass))
         {
             return obj[VECTOR_SUBARRAY_INDEX].values();
         }
@@ -1751,7 +1753,7 @@ export function valueiterator(obj)
         {
             return obj[BYTEARRAY_BA_INDEX].values();
         }
-        if (istype(obj, mapclass))
+        if (istypeinstantiatedfrom(ctor, mapclass))
         {
             if (obj[MAP_PROPERTIES_INDEX] instanceof WeakMap)
             {
@@ -4623,8 +4625,18 @@ definemethod($publicns, "isArray", {
     {
         if (arg instanceof Array)
         {
-            const ctor = arg[CONSTRUCTOR_INDEX];
-            return istypeinstantiatedfrom(ctor, arrayclass);
+            return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass);
+        }
+        return false;
+    }
+});
+
+definemethod($publicns, "isVector", {
+    exec(arg)
+    {
+        if (arg instanceof Array)
+        {
+            return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], vectorclass);
         }
         return false;
     }
