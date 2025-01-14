@@ -4321,7 +4321,7 @@ export function call(obj, ...args)
             throw new TypeError("Incorrect call to the Vector() class.");
         }
         const arg = args[0];
-        if (istype(arg, classobj) || issubtype(arg, classobj))
+        if (istype(arg, classobj))
         {
             return arg;
         }
@@ -4351,7 +4351,7 @@ function callboundfunctionorclass(obj, thisreceiver, ...args)
             return construct(classobj, args[0] ?? 0);
         }
         const arg = args[0];
-        return istype(arg, classobj) || issubtype(arg, classobj) ? arg : null;
+        return istype(arg, classobj) ? arg : null;
     }
     else
     {
@@ -4420,20 +4420,21 @@ export function istype(value, type)
 
         if (type instanceof Interface)
         {
+            const targetItrfcs = type.recursivedescinterfacelist();
             const instanceClasses = instanceClass.recursivedescclasslist();
-
             for (const class1 of instanceClasses)
             {
                 for (const itrfc of class1.interfaces)
                 {
-                    if (itrfc.isbasetypeof(type))
+                    if (itrfc.issubtypeof(type))
                     {
                         return true;
                     }
                 }
             }
         }
-        return instanceClass.isbasetypeof(type);
+
+        return instanceClass.issubtypeof(type);
     }
     else if (typeof value == "object" || typeof value == "symbol")
     {
@@ -4456,65 +4457,6 @@ export function istype(value, type)
     return false;
 }
 
-/**
- * Type checking function used in casts such as `T(v)` and `v as T`:
- * determines whether the type of the `value` parameter is a subtype of the `type` parameter.
- */
-export function issubtype(value, type)
-{
-    if (type === null)
-    {
-        return true;
-    }
-
-    if (type instanceof Array && type[CONSTRUCTOR_INDEX] === classclass)
-    {
-        type = type[CLASS_CLASS_INDEX];
-    }
-
-    if (value instanceof Array)
-    {
-        const instanceClass = value[CONSTRUCTOR_INDEX];
-        if (!(instanceClass instanceof ActionCoreType))
-        {
-            return value instanceof type;
-        }
-
-        if (type instanceof Interface)
-        {
-            const targetItrfcs = type.recursivedescinterfacelist();
-            const instanceClasses = instanceClass.recursivedescclasslist();
-            for (const class1 of instanceClasses)
-            {
-                for (const itrfc of class1.interfaces)
-                {
-                    if (itrfc.issubtypeof(type))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return instanceClass.issubtypeof(type);
-    }
-    else if (typeof value == "object" || typeof value == "symbol")
-    {
-        return false;
-    }
-
-    if (type instanceof Class)
-    {
-        return (
-            (typeof value === "number" && numberclasses.indexOf(type) !== -1) ||
-            (typeof value === "string" && type == stringclass) ||
-            (typeof value === "boolean" && type == booleanclass)
-        );
-    }
-
-    return false;
-}
-
 const m_coercionDataView = new DataView(new ArrayBuffer(32));
 
 /**
@@ -4522,7 +4464,7 @@ const m_coercionDataView = new DataView(new ArrayBuffer(32));
  */
 export function coerce(value, type)
 {
-    if (!issubtype(value, type))
+    if (!istype(value, type))
     {
         if (type instanceof Class)
         {

@@ -1,0 +1,121 @@
+Code backup:
+
+export function istype(value, type)
+{
+    if (type === null)
+    {
+        return true;
+    }
+
+    // type = null = *
+    // type = [object Class] = a class
+    // type = [object Interface] = an interface
+    if (type instanceof Array && type[CONSTRUCTOR_INDEX] === classclass)
+    {
+        type = type[CLASS_CLASS_INDEX];
+    }
+
+    if (value instanceof Array)
+    {
+        const instanceClass = value[CONSTRUCTOR_INDEX];
+        if (!(instanceClass instanceof ActionCoreType))
+        {
+            return value instanceof type;
+        }
+
+        if (type instanceof Interface)
+        {
+            const instanceClasses = instanceClass.recursivedescclasslist();
+
+            for (const class1 of instanceClasses)
+            {
+                for (const itrfc of class1.interfaces)
+                {
+                    if (itrfc.isbasetypeof(type))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return instanceClass.isbasetypeof(type);
+    }
+    else if (typeof value == "object" || typeof value == "symbol")
+    {
+        if (typeof type !== "function")
+        {
+            return false;
+        }
+        return value instanceof type;
+    }
+
+    if (type instanceof Class)
+    {
+        return (
+            (typeof value === "number" && (numberclasses.indexOf(type) !== -1) || type === objectclass) ||
+            (typeof value === "string" && (type == stringclass || type === objectclass)) ||
+            (typeof value === "boolean" && (type == booleanclass || type === objectclass))
+        );
+    }
+
+    return false;
+}
+
+/**
+ * Type checking function used in casts such as `T(v)` and `v as T`:
+ * determines whether the type of the `value` parameter is a subtype of the `type` parameter.
+ */
+export function issubtype(value, type)
+{
+    if (type === null)
+    {
+        return true;
+    }
+
+    if (type instanceof Array && type[CONSTRUCTOR_INDEX] === classclass)
+    {
+        type = type[CLASS_CLASS_INDEX];
+    }
+
+    if (value instanceof Array)
+    {
+        const instanceClass = value[CONSTRUCTOR_INDEX];
+        if (!(instanceClass instanceof ActionCoreType))
+        {
+            return value instanceof type;
+        }
+
+        if (type instanceof Interface)
+        {
+            const targetItrfcs = type.recursivedescinterfacelist();
+            const instanceClasses = instanceClass.recursivedescclasslist();
+            for (const class1 of instanceClasses)
+            {
+                for (const itrfc of class1.interfaces)
+                {
+                    if (itrfc.issubtypeof(type))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return instanceClass.issubtypeof(type);
+    }
+    else if (typeof value == "object" || typeof value == "symbol")
+    {
+        return false;
+    }
+
+    if (type instanceof Class)
+    {
+        return (
+            (typeof value === "number" && numberclasses.indexOf(type) !== -1) ||
+            (typeof value === "string" && type == stringclass) ||
+            (typeof value === "boolean" && type == booleanclass)
+        );
+    }
+
+    return false;
+}
