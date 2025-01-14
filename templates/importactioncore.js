@@ -57,7 +57,7 @@ import {
     dateclass,
     FUNCTION_FUNCTION_INDEX,
     functionclass,
-    reflectclass,
+    thereflectclass,
     ARRAY_SUBARRAY_INDEX,
     arrayclass,
     VECTOR_SUBARRAY_INDEX,

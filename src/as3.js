@@ -6988,7 +6988,7 @@ export const functionclass = defineclass(name($publicns, "Function"),
     ]
 );
 
-export const reflectclass = defineclass(name($publicns, "Reflect"),
+export const thereflectclass = defineclass(name($publicns, "Reflect"),
     {
         ctor()
         {
@@ -6996,7 +6996,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
         },
     },
     [
-        [$.name($publicns, "typeArguments"), $.method({
+        [name($publicns, "typeArguments"), method({
             static: true,
 
             exec(type)
@@ -7017,7 +7017,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return null;
             },
         })],
-        [$.name($publicns, "lookupMetadata"), $.method({
+        [name($publicns, "lookupMetadata"), method({
             static: true,
 
             exec(type, name)
@@ -7048,7 +7048,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return null;
             },
         })],
-        [$.name($publicns, "variables"), $.method({
+        [name($publicns, "variables"), method({
             static: true,
 
             exec(type)
@@ -7106,7 +7106,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return [applytype(arrayclass, [objectclass]), new Map(), r];
             }
         })],
-        [$.name($publicns, "tupleTypeElements"), $.method({
+        [name($publicns, "tupleTypeElements"), method({
             static: true,
 
             exec(type)
@@ -7127,7 +7127,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return null;
             },
         })],
-        [$.name($publicns, "superType"), $.method({
+        [name($publicns, "superType"), method({
             static: true,
 
             exec(type)
@@ -7148,7 +7148,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return type.baseclass ? reflectclass(type.baseclass) : null;
             }
         })],
-        [$.name($publicns, "arrayOf"), $.method({
+        [name($publicns, "arrayOf"), method({
             static: true,
 
             exec(elementType)
@@ -7161,7 +7161,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return applytype(arrayclass, [elementType]);
             }
         })],
-        [$.name($publicns, "vectorOf"), $.method({
+        [name($publicns, "vectorOf"), method({
             static: true,
 
             exec(elementType)
@@ -7174,7 +7174,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return applytype(vectorclass, [elementType]);
             }
         })],
-        [$.name($publicns, "mapOf"), $.method({
+        [name($publicns, "mapOf"), method({
             static: true,
 
             exec(keyType, valueType)
@@ -7191,7 +7191,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return applytype(mapclass, [keyType, valueType]);
             }
         })],
-        [$.name($publicns, "tupleOf"), $.method({
+        [name($publicns, "tupleOf"), method({
             static: true,
 
             exec(elementTypes)
@@ -7211,7 +7211,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return tupletype(elementTypes);
             }
         })],
-        [$.name($publicns, "constructTuple"), $.method({
+        [name($publicns, "constructTuple"), method({
             static: true,
 
             exec(elementTypes, elements)
@@ -7247,7 +7247,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return [tupletype(elementTypes), untoucheddynamic, ...elements];
             }
         })],
-        [$.name($publicns, "isArrayType"), $.method({
+        [name($publicns, "isArrayType"), method({
             static: true,
 
             exec(type)
@@ -7264,7 +7264,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return istypeinstantiatedfrom(type, arrayclass);
             },
         })],
-        [$.name($publicns, "isMapType"), $.method({
+        [name($publicns, "isMapType"), method({
             static: true,
 
             exec(type)
@@ -7281,7 +7281,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return istypeinstantiatedfrom(type, mapclass);
             },
         })],
-        [$.name($publicns, "isTupleType"), $.method({
+        [name($publicns, "isTupleType"), method({
             static: true,
 
             exec(type)
@@ -7298,7 +7298,7 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return type instanceof TupleType;
             },
         })],
-        [$.name($publicns, "isVectorType"), $.method({
+        [name($publicns, "isVectorType"), method({
             static: true,
 
             exec(type)
