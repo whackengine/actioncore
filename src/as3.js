@@ -7148,6 +7148,105 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
                 return type.baseclass ? reflectclass(type.baseclass) : null;
             }
         })],
+        [$.name($publicns, "arrayOf"), $.method({
+            static: true,
+
+            exec(elementType)
+            {
+                if (!(elementType === null || elementType === undefined || istype(elementType, classclass)))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                elementType = elementType ? elementType[CLASS_CLASS_INDEX] : null;
+                return applytype(arrayclass, [elementType]);
+            }
+        })],
+        [$.name($publicns, "vectorOf"), $.method({
+            static: true,
+
+            exec(elementType)
+            {
+                if (!(elementType === null || elementType === undefined || istype(elementType, classclass)))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                elementType = elementType ? elementType[CLASS_CLASS_INDEX] : null;
+                return applytype(vectorclass, [elementType]);
+            }
+        })],
+        [$.name($publicns, "mapOf"), $.method({
+            static: true,
+
+            exec(keyType, valueType)
+            {
+                for (const t of [keyType, valueType])
+                {
+                    if (!(t === null || t === undefined || istype(t, classclass)))
+                    {
+                        throw new ArgumentError("Expected arguments of type Class.");
+                    }
+                }
+                keyType = keyType ? keyType[CLASS_CLASS_INDEX] : null;
+                valueType = valueType ? valueType[CLASS_CLASS_INDEX] : null;
+                return applytype(mapclass, [keyType, valueType]);
+            }
+        })],
+        [$.name($publicns, "tupleOf"), $.method({
+            static: true,
+
+            exec(elementTypes)
+            {
+                if (!istypeinstantiatedfrom(elementTypes, arrayclass))
+                {
+                    throw new ArgumentError("Expected an Array argument.");
+                }
+                elementTypes = elementTypes[ARRAY_SUBARRAY_INDEX].map(t =>
+                {
+                    if (!(t === null || t === undefined || istype(t, classclass)))
+                    {
+                        throw new ArgumentError("Expected arguments of type Class.");
+                    }
+                    return t ? t[CLASS_CLASS_INDEX] : null;
+                });
+                return tupletype(elementTypes);
+            }
+        })],
+        [$.name($publicns, "constructTuple"), $.method({
+            static: true,
+
+            exec(elementTypes, elements)
+            {
+                if (!(istypeinstantiatedfrom(elementTypes, arrayclass) && istypeinstantiatedfrom(elements, arrayclass)))
+                {
+                    throw new ArgumentError("Expected Array arguments.");
+                }
+                const len = elementTypes.length;
+                if (len != elements.length)
+                {
+                    throw new ArgumentError("Given Array arguments must have the same length.");
+                }
+                if (len < 2)
+                {
+                    throw new ArgumentError("Specified Arrays must each have a length greater than 1.");
+                }
+                elementTypes = elementTypes[ARRAY_SUBARRAY_INDEX].map(t =>
+                {
+                    if (!(t === null || t === undefined || istype(t, classclass)))
+                    {
+                        throw new ArgumentError("Expected arguments of type Class.");
+                    }
+                    return t ? t[CLASS_CLASS_INDEX] : null;
+                });
+                for (let i = 0; i < l; i++)
+                {
+                    if (!istype(elements[i], elementTypes[i]))
+                    {
+                        throw new ArgumentError("Expected index " + i + " to be of type " + nameoftype(elementTypes[i]) + ".");
+                    }
+                }
+                return [tupletype(elementTypes), untoucheddynamic, ...elements];
+            }
+        })],
         [$.name($publicns, "isArrayType"), $.method({
             static: true,
 
