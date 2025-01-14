@@ -15,5 +15,3 @@ console.log("const regex = /(?:)/gi;");
 console.log("map2[regex] = 10;");
 $.setproperty(map2, null, regex, 10);
 console.log("map2[regex] ==", $.getproperty(map2, null, regex));
-
-$.construct($.mapclass);

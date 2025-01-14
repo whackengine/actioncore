@@ -351,7 +351,7 @@ export class ActionCoreType
     }
 }
 
-function nameoftype(type)
+export function nameoftype(type)
 {
     return type === null ? "*" : type.name;
 }
@@ -1522,11 +1522,9 @@ export function setglobal(qual, name, value)
         {
             throw new ReferenceError("Cannot assign to read-only property.");
         }
-        if (!istype(value, trait.type))
-        {
+        globalvarvals.set(trait, coerceorfail(value, trait.type, () => {
             throw new TypeError("Cannot assign incompatible value.");
-        }
-        globalvarvals.set(trait, coerce(value, trait.type));
+        }));
         return;
     }
     if (trait instanceof VirtualVariable)
@@ -1536,11 +1534,9 @@ export function setglobal(qual, name, value)
         {
             throw new ReferenceError("Cannot assign to read-only property.");
         }
-        if (!istype(value, trait.type))
-        {
+        setter.exec.apply(undefined, [coerceorfail(value, trait.type, () => {
             throw new TypeError("Cannot assign incompatible value.");
-        }
-        setter.exec.apply(undefined, [coerce(value, trait.type)]);
+        })]);
         return;
     }
     if (trait instanceof Method)
@@ -2918,10 +2914,12 @@ export function setproperty(base, qual, name, value)
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
                 }
-                if (!(istypeornull(name, keyType) && istypeornull(value, valueType)))
-                {
-                    throw new TypeError("Expected key type " + nameoftype(keyType) + " and value type " + nameoftype(valueType) + ".");
-                }
+                name = coerceorfail(name, keyType, () => {
+                    throw new TypeError("Expected key type " + nameoftype(keyType));
+                });
+                value = coerceorfail(value, valueType, () => {
+                    throw new TypeError("Expected value type " + nameoftype(valueType));
+                });
                 mm.set(name, value);
                 return;
             }
@@ -2929,10 +2927,9 @@ export function setproperty(base, qual, name, value)
             if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 const [elemType] = ctor.argumentslist;
-                if (istypeornull(value, elemType))
-                {
+                value = coerceorfail(value, elemType, () => {
                     throw new TypeError("Expected value of type " + nameoftype(elemType));
-                }
+                });
                 base[ARRAY_SUBARRAY_INDEX][name >> 0] = value;
                 return;
             }
@@ -2953,10 +2950,9 @@ export function setproperty(base, qual, name, value)
                     arr.set(i, value);
                     return;
                 }
-                if (istypeornull(value, elemType))
-                {
+                value = coerceorfail(value, elemType, () => {
                     throw new TypeError("Expected value of type " + nameoftype(elemType));
-                }
+                });
                 arr[i] = value;
                 return;
             }
@@ -2991,11 +2987,9 @@ export function setproperty(base, qual, name, value)
                     {
                         throw new ReferenceError("Cannot assign to read-only property.");
                     }
-                    if (!istype(value, itrait.type))
-                    {
+                    base[SLOT_FIXTURE_START + i] = coerceorfail(value, itrait.type, () => {
                         throw new TypeError("Cannot assign incompatible value.");
-                    }
-                    base[SLOT_FIXTURE_START + i] = coerce(value, itrait.type);
+                    });
                     return;
                 }
                 // property accessor
@@ -3006,11 +3000,9 @@ export function setproperty(base, qual, name, value)
                     {
                         throw new ReferenceError("Cannot assign to read-only property.");
                     }
-                    if (!istype(value, itrait.type))
-                    {
+                    setter.exec.call(base, coerceorfail(value, itrait.type, () => {
                         throw new TypeError("Cannot assign incompatible value.");
-                    }
-                    setter.exec.call(base, coerce(value, itrait.type));
+                    }));
                     return;
                 }
                 // bound method
@@ -3077,11 +3069,9 @@ export function setproperty(base, qual, name, value)
                     {
                         throw new ReferenceError("Cannot assign to read-only property.");
                     }
-                    if (!istype(value, trait.type))
-                    {
+                    c1.staticvarvals.set(trait, coerceorfail(value, trait.type, () => {
                         throw new TypeError("Cannot assign incompatible value.");
-                    }
-                    c1.staticvarvals.set(trait, coerce(value, trait.type));
+                    }));
                     return;
                 }
                 // property accessor
@@ -3092,11 +3082,9 @@ export function setproperty(base, qual, name, value)
                     {
                         throw new ReferenceError("Cannot assign to read-only property.");
                     }
-                    if (!istype(value, trait.type))
-                    {
+                    setter.exec.apply(undefined, [coerceorfail(value, trait.type, () => {
                         throw new TypeError("Cannot assign incompatible value.");
-                    }
-                    setter.exec.apply(undefined, [coerce(value, trait.type)]);
+                    })]);
                     return;
                 }
                 // method
@@ -4376,9 +4364,12 @@ export function hasdynamicproperty(base, name)
     return (base[DYNAMIC_PROPERTIES_INDEX]).has(name);
 }
 
-function istypeornull(value, type)
+/**
+ * Checks whether a value is of a type, or null or undefined according to the given type.
+ */
+export function istypeornull(value, type)
 {
-    return istype(value, type) || value === null || value === undefined;
+    return istype(value, type) || (value === null && nonnullableclasses.indexOf(type) === -1) || (type === objectclass && value === undefined);
 }
 
 /**
@@ -4465,6 +4456,44 @@ export function coerce(value, type)
             );
         }
         return null;
+    }
+    if (numberclasses.indexOf(type) !== -1)
+    {
+        switch (type)
+        {
+            case floatclass:
+                m_coercionDataView.setFloat32(0, value);
+                value = m_coercionDataView.getFloat32(0);
+                return value;
+            case numberclass:
+                return Number(value);
+            case intclass:
+                m_coercionDataView.setInt32(0, value);
+                value = m_coercionDataView.getInt32(0);
+                return value;
+            case uintclass:
+                m_coercionDataView.setUint32(0, value);
+                value = m_coercionDataView.getUint32(0);
+                return value;
+        }
+    }
+    return value;
+}
+
+export function coerceorfail(value, type, failureCallback)
+{
+    if (!istype(value, type))
+    {
+        if (value === null && nonnullableclasses.indexOf(type) === -1)
+        {
+            return null;
+        }
+        if (value === undefined && (type === objectclass || nonnullableclasses.indexOf(type) == -1))
+        {
+            return type === objectclass ? undefined : null;
+        }
+        failureCallback();
+        throw new TypeError("Implicit coercion to " + nameoftype(type) + " failed.");
     }
     if (numberclasses.indexOf(type) !== -1)
     {
@@ -4667,37 +4696,43 @@ definemethod($publicns, "isXMLName", {
     }
 });
 
-definemethod($publicns, "isArray", {
-    exec(arg)
+export function isarray(arg)
+{
+    if (arg instanceof Array)
     {
-        if (arg instanceof Array)
-        {
-            return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass);
-        }
-        return false;
+        return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass);
     }
+    return false;
+}
+
+definemethod($publicns, "isArray", {
+    exec: isarray,
 });
+
+export function ismap(arg)
+{
+    if (arg instanceof Array)
+    {
+        return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], mapclass);
+    }
+    return false;
+}
 
 definemethod($publicns, "isMap", {
-    exec(arg)
-    {
-        if (arg instanceof Array)
-        {
-            return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], mapclass);
-        }
-        return false;
-    }
+    exec: ismap,
 });
 
-definemethod($publicns, "isVector", {
-    exec(arg)
+export function isvector(arg)
+{
+    if (arg instanceof Array)
     {
-        if (arg instanceof Array)
-        {
-            return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], vectorclass);
-        }
-        return false;
+        return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], vectorclass);
     }
+    return false;
+}
+
+definemethod($publicns, "isVector", {
+    exec: isvector,
 });
 
 export const objectclass = defineclass(name($publicns, "Object"),
@@ -5228,6 +5263,8 @@ export const namespaceclass = defineclass(name($publicns, "Namespace"),
         })],
     ]
 );
+
+const nonnullableclasses = [booleanclass, numberclass, floatclass, intclass, uintclass];
 
 const internedclassobjs = new Map();
 
@@ -7239,10 +7276,9 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 });
                 for (let i = 0; i < l; i++)
                 {
-                    if (!istype(elements[i], elementTypes[i]))
-                    {
+                    elements[i] = coerceorfail(elements[i], elementTypes[i], () => {
                         throw new ArgumentError("Expected index " + i + " to be of type " + nameoftype(elementTypes[i]) + ".");
-                    }
+                    });
                 }
                 return [tupletype(elementTypes), untoucheddynamic, ...elements];
             }
@@ -7333,13 +7369,12 @@ export const arrayclass = defineclass(name($publicns, "Array"),
             }
             else
             {
-                for (const arg of args)
+                args = args.map(arg =>
                 {
-                    if (!istypeornull(arg, elemType))
-                    {
+                    return coerceorfail(arg, elemType, () => {
                         throw new TypeError("Expected item of type " + nameoftype(elemType));
-                    }
-                }
+                    });
+                });
                 this[ARRAY_SUBARRAY_INDEX] = args.slice(0);
             }
         },
@@ -7373,24 +7408,20 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const [elemType] = ctor.argumentslist;
                 for (const arg of args)
                 {
-                    if (istype(arg, arrayclass))
+                    if (isarray(arg))
                     {
                         for (const arg1 of arg[ARRAY_SUBARRAY_INDEX])
                         {
-                            if (!istypeornull(arg1, elemType))
-                            {
+                            r.push(coerceorfail(arg1, elemType, () => {
                                 throw new TypeError("Expected item of type " + nameoftype(elemType));
-                            }
-                            r.push(arg1);
+                            }));
                         }
                     }
                     else
                     {
-                        if (!istypeornull(arg, elemType))
-                        {
+                        r.push(coerceorfail(arg, elemType, () => {
                             throw new TypeError("Expected item of type " + nameoftype(elemType));
-                        }
-                        r.push(arg);
+                        }));
                     }
                 }
                 return [this[CONSTRUCTOR_INDEX], new Map(), r];
@@ -7463,11 +7494,9 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                if (!istypeornull(searchElement, elemType))
-                {
+                return arr.indexOf(coerceorfail(searchElement, elemType, () => {
                     throw new TypeError("Expected item of type " + nameoftype(elemType));
-                }
-                return arr.indexOf(searchElement, fromIndex);
+                }), fromIndex);
             },
         })],
         [name(as3ns, "insertAt"), method(
@@ -7477,10 +7506,9 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                if (!istypeornull(element, elemType))
-                {
+                element = coerceorfail(element, elemType, () => {
                     throw new TypeError("Expected item of type " + nameoftype(elemType));
-                }
+                });
                 arr.splice(index, 0, element);
             },
         })],
@@ -7499,10 +7527,9 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                if (!istypeornull(searchElement, elemType))
-                {
+                searchElement = coerceorfail(searchElement, elemType, () => {
                     throw new TypeError("Expected item of type " + nameoftype(elemType));
-                }
+                });
                 return arr.lastIndexOf(searchElement, fromIndex);
             },
         })],
@@ -7541,13 +7568,9 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                for (const arg of args)
-                {
-                    if (!istypeornull(arg, elemType))
-                    {
-                        throw new TypeError("Expected item of type " + nameoftype(elemType));
-                    }
-                }
+                args = args.map(arg => coerceorfail(arg, elemType, () => {
+                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                }));
                 return arr.push(...args);
             },
         })],
@@ -7707,7 +7730,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const sortOptionsByField = [];
 
                 // fieldName => fieldNames
-                if (istype(fieldName, arrayclass))
+                if (isarray(fieldName))
                 {
                     for (const name1 of fieldName[ARRAY_SUBARRAY_INDEX])
                     {
@@ -7722,7 +7745,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const numNames = fieldNames.length;
 
                 // sortOptions => sortOptionsByField
-                if (istype(sortOptions, arrayclass))
+                if (isarray(sortOptions))
                 {
                     for (const opt of sortOptions[ARRAY_SUBARRAY_INDEX])
                     {
@@ -7796,6 +7819,9 @@ export const arrayclass = defineclass(name($publicns, "Array"),
             exec(startIndex, deleteCount = 0xFFFFFFFF, ...items)
             {
                 const arr = this[ARRAY_SUBARRAY_INDEX];
+                items = items.map(item => coerceorfail(item, elemType, () => {
+                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
                 return [this[CONSTRUCTOR_INDEX], new Map(), r];
             },
@@ -7807,13 +7833,9 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                for (const arg of args)
-                {
-                    if (!istypeornull(arg, elemType))
-                    {
-                        throw new TypeError("Expected item of type " + nameoftype(elemType));
-                    }
-                }
+                args = args.map(arg => coerceorfail(arg, elemType, () => {
+                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                }));
                 return arr.unshift(...args);
             },
         })],
@@ -8011,24 +8033,20 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const [elemType] = ctor.argumentslist;
                 for (const arg of args)
                 {
-                    if (istype(arg, vectorclass))
+                    if (isvector(arg))
                     {
                         for (const arg1 of arg[VECTOR_SUBARRAY_INDEX])
                         {
-                            if (!istypeornull(arg1, elemType))
-                            {
+                            r.push(coerceorfail(arg1, elemType, () => {
                                 throw new TypeError("Expected item of type " + nameoftype(elemType));
-                            }
-                            r.push(arg1);
+                            }));
                         }
                     }
                     else
                     {
-                        if (!istypeornull(arg, elemType))
-                        {
+                        r.push(coerceorfail(arg, elemType, () => {
                             throw new TypeError("Expected item of type " + nameoftype(elemType));
-                        }
-                        r.push(arg);
+                        }));
                     }
                 }
                 return [this[CONSTRUCTOR_INDEX], new Map(), r];
@@ -8100,10 +8118,9 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
             {
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
-                if (!istypeornull(searchElement, elemType))
-                {
+                searchElement = coerceorfail(searchElement, elemType, () => {
                     throw new TypeError("Expected search element of type " + nameoftype(elemType));
-                }
+                });
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 return arr.indexOf(searchElement, fromIndex);
             },
@@ -8118,10 +8135,9 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 }
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
-                if (!istypeornull(element, elemType))
-                {
+                element = coerceorfail(element, elemType, () => {
                     throw new TypeError("Expected item of type " + nameoftype(elemType));
-                }
+                });
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 arr.splice(index, 0, element);
             },
@@ -8140,10 +8156,9 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
             {
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
-                if (!istypeornull(searchElement, elemType))
-                {
+                searchElement = coerceorfail(searchElement, elemType, () => {
                     throw new TypeError("Expected search element of type " + nameoftype(elemType));
-                }
+                });
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 return arr.lastIndexOf(searchElement, fromIndex);
             },
@@ -8187,13 +8202,9 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[VECTOR_SUBARRAY_INDEX];
-                for (const arg of args)
-                {
-                    if (!istypeornull(arg, elemType))
-                    {
-                        throw new TypeError("Expected item of type " + nameoftype(elemType));
-                    }
-                }
+                args = args.map(arg => coerceorfail(arg, elemType, () => {
+                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                }));
                 arr.push(...args);
                 return arr.length;
             },
@@ -8332,7 +8343,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const sortOptionsByField = [];
 
                 // fieldName => fieldNames
-                if (istype(fieldName, arrayclass))
+                if (isarray(fieldName))
                 {
                     for (const name1 of fieldName[VECTOR_SUBARRAY_INDEX])
                     {
@@ -8347,7 +8358,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const numNames = fieldNames.length;
 
                 // sortOptions => sortOptionsByField
-                if (istype(sortOptions, arrayclass))
+                if (isarray(sortOptions))
                 {
                     for (const opt of sortOptions[VECTOR_SUBARRAY_INDEX])
                     {
@@ -8427,13 +8438,9 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[VECTOR_SUBARRAY_INDEX];
-                for (const item of items)
-                {
-                    if (!istypeornull(item, elemType))
-                    {
-                        throw new TypeError("Expected item of type " + nameoftype(elemType));
-                    }
-                }
+                items = items.map(item => coerceorfail(item, elemType, () => {
+                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
                 return [this[CONSTRUCTOR_INDEX], new Map(), r, false];
             },
@@ -8449,13 +8456,9 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 const arr = this[VECTOR_SUBARRAY_INDEX];
-                for (const arg of args)
-                {
-                    if (!istypeornull(arg, elemType))
-                    {
-                        throw new TypeError("Expected item of type " + nameoftype(elemType));
-                    }
-                }
+                args = args.map(arg => coerceorfail(arg, elemType, () => {
+                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                }));
                 return arr.unshift(...args);
             },
         })],
@@ -8693,7 +8696,7 @@ function Vectornumber_concat(...args)
     const r = thisvec.slice(0);
     for (const arg of args)
     {
-        if (istype(arg, this[CONSTRUCTOR_INDEX]))
+        if (isvector(arg))
         {
             for (const v of arg[VECTOR_SUBARRAY_INDEX])
             {
@@ -8847,7 +8850,7 @@ function Vectornumber_sortOn(fieldName, sortOptions = null)
     const sortOptionsByField = [];
 
     // fieldName => fieldNames
-    if (istype(fieldName, arrayclass))
+    if (isarray(fieldName))
     {
         for (const name1 of fieldName[VECTOR_SUBARRAY_INDEX])
         {
@@ -8862,7 +8865,7 @@ function Vectornumber_sortOn(fieldName, sortOptions = null)
     const numNames = fieldNames.length;
 
     // sortOptions => sortOptionsByField
-    if (istype(sortOptions, arrayclass))
+    if (isarray(sortOptions))
     {
         for (const opt of sortOptions[VECTOR_SUBARRAY_INDEX])
         {
@@ -9626,7 +9629,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
             static: true,
             exec(list)
             {
-                if (!istype(list, arrayclass))
+                if (!isarray(list))
                 {
                     throw new ArgumentError("Argument must be an Array.");
                 }
@@ -9643,7 +9646,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
             static: true,
             exec(list)
             {
-                if (!istype(list, arrayclass))
+                if (!isarray(list))
                 {
                     throw new ArgumentError("Argument must be an Array.");
                 }
@@ -9679,7 +9682,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
             static: true,
             exec(list)
             {
-                if (!istype(list, arrayclass))
+                if (!isarray(list))
                 {
                     throw new ArgumentError("Argument must be an Array.");
                 }
@@ -9699,7 +9702,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
             static: true,
             exec(list)
             {
-                if (!istype(list, arrayclass))
+                if (!isarray(list))
                 {
                     throw new ArgumentError("Argument must be an Array.");
                 }
@@ -9932,7 +9935,7 @@ export const aggregateerrorclass = defineclass(name($publicns, "AggregateError")
         ctor(errors, message = "")
         {
             errorclass.ctor.apply(this, [message]);
-            if (!istype(errors, arrayclass))
+            if (!isarray(errors))
             {
                 throw new ArgumentError("Argument must be an Array.");
             }
@@ -9954,7 +9957,7 @@ export const aggregateerrorclass = defineclass(name($publicns, "AggregateError")
             {
                 exec(val)
                 {
-                    if (!istype(val, arrayclass))
+                    if (!isarray(val))
                     {
                         throw new TypeError("Value must be an Array.");
                     }
