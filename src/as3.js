@@ -648,7 +648,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get name()
     {
-        return this.original.name;
+        return this.original.name + "." + "<" + this.argumentslist.map(a => nameoftype(a)).join(", ") + ">";
     }
 
     get final()
@@ -786,7 +786,7 @@ export class TupleType extends ActionCoreType
 
     get name()
     {
-        return "Tuple" + randomHexID();
+        return "[" + this.elementtypes.map(t => nameoftype(t)).join(", ") + "]";
     }
 
     get final()
