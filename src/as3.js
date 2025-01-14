@@ -4689,6 +4689,17 @@ definemethod($publicns, "isArray", {
     }
 });
 
+definemethod($publicns, "isMap", {
+    exec(arg)
+    {
+        if (arg instanceof Array)
+        {
+            return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], mapclass);
+        }
+        return false;
+    }
+});
+
 definemethod($publicns, "isVector", {
     exec(arg)
     {
@@ -5236,6 +5247,10 @@ const internedclassobjs = new Map();
  */
 export function reflectclass(type)
 {
+    if (type === null)
+    {
+        return null;
+    }
     if (!(type instanceof ActionCoreType))
     {
         throw new TypeError("Cannot reflect a value as a Class object.");
@@ -6979,6 +6994,89 @@ export const functionclass = defineclass(name($publicns, "Function"),
             exec(thisArg, ...args)
             {
                 return this[FUNCTION_FUNCTION_INDEX].call(thisArg, ...args);
+            },
+        })],
+    ]
+);
+
+export const reflectclass = defineclass(name($publicns, "Reflect"),
+    {
+        ctor()
+        {
+            throw new Error("Cannot construct the Reflect class.");
+        },
+    },
+    [
+        [$.name($publicns, "typeArguments"), $.method({
+            static: true,
+
+            exec(classObject)
+            {
+                if (classObject === null || classObject === undefined)
+                {
+                    return null;
+                }
+                if (!istype(classObject, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                classObject = classObject[CLASS_CLASS_INDEX];
+                if (classObject instanceof SpecialTypeAfterSub)
+                {
+                    return [applytype(arrayclass, [classclass]), new Map(), classObject.argumentslist.map(arg => reflectclass(arg))];
+                }
+                return null;
+            },
+        })],
+        [$.name($publicns, "isArrayType"), $.method({
+            static: true,
+
+            exec(classObject)
+            {
+                if (classObject === null || classObject === undefined)
+                {
+                    return false;
+                }
+                if (!istype(classObject, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                classObject = classObject[CLASS_CLASS_INDEX];
+                return istypeinstantiatedfrom(classObject, arrayclass);
+            },
+        })],
+        [$.name($publicns, "isMapType"), $.method({
+            static: true,
+
+            exec(classObject)
+            {
+                if (classObject === null || classObject === undefined)
+                {
+                    return false;
+                }
+                if (!istype(classObject, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                classObject = classObject[CLASS_CLASS_INDEX];
+                return istypeinstantiatedfrom(classObject, mapclass);
+            },
+        })],
+        [$.name($publicns, "isVectorType"), $.method({
+            static: true,
+
+            exec(classObject)
+            {
+                if (classObject === null || classObject === undefined)
+                {
+                    return false;
+                }
+                if (!istype(classObject, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                classObject = classObject[CLASS_CLASS_INDEX];
+                return istypeinstantiatedfrom(classObject, vectorclass);
             },
         })],
     ]
