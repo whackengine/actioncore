@@ -73,21 +73,6 @@ export class Userns extends Ns
     }
 }
 
-export class Explicitns extends Ns
-{
-    uri = "";
-
-    constructor(uri)
-    {
-        super();
-        this.uri = uri;
-    }
-
-    toString() {
-        return this.uri;
-    }
-}
-
 export class Package
 {
     /**
@@ -170,10 +155,6 @@ export class Name
     toString()
     {
         if (this.ns instanceof Userns)
-        {
-            return this.ns.uri + ":" + this.name;
-        }
-        else if (this.ns instanceof Explicitns)
         {
             return this.ns.uri + ":" + this.name;
         }
@@ -362,6 +343,11 @@ export class ActionCoreType
     get name()
     {
         return "$" + randomHexID();
+    }
+
+    get metadata()
+    {
+        return [];
     }
 }
 
@@ -889,6 +875,9 @@ export function tupletype(elementtypes)
 export class Metadata
 {
     name;
+    /**
+     * @type {[string | null | undefined, string][]}
+     */
     entries;
 
     constructor(name, entries)
@@ -7010,73 +6999,162 @@ export const reflectclass = defineclass(name($publicns, "Reflect"),
         [$.name($publicns, "typeArguments"), $.method({
             static: true,
 
-            exec(classObject)
+            exec(type)
             {
-                if (classObject === null || classObject === undefined)
+                if (type === null || type === undefined)
                 {
                     return null;
                 }
-                if (!istype(classObject, classclass))
+                if (!istype(type, classclass))
                 {
                     throw new ArgumentError("Expected argument of type Class.");
                 }
-                classObject = classObject[CLASS_CLASS_INDEX];
-                if (classObject instanceof SpecialTypeAfterSub)
+                type = type[CLASS_CLASS_INDEX];
+                if (type instanceof SpecialTypeAfterSub)
                 {
-                    return [applytype(arrayclass, [classclass]), new Map(), classObject.argumentslist.map(arg => reflectclass(arg))];
+                    return [applytype(arrayclass, [classclass]), new Map(), type.argumentslist.map(arg => reflectclass(arg))];
                 }
                 return null;
             },
         })],
-        [$.name($publicns, "isArrayType"), $.method({
+        [$.name($publicns, "lookupMetadata"), $.method({
             static: true,
 
-            exec(classObject)
+            exec(type, name)
             {
-                if (classObject === null || classObject === undefined)
+                if (type === null || type === undefined)
                 {
-                    return false;
+                    return null;
                 }
-                if (!istype(classObject, classclass))
+                if (!istype(type, classclass))
                 {
                     throw new ArgumentError("Expected argument of type Class.");
                 }
-                classObject = classObject[CLASS_CLASS_INDEX];
-                return istypeinstantiatedfrom(classObject, arrayclass);
+                type = type[CLASS_CLASS_INDEX];
+                const metadata = type.metadata.find(m => m.name === name);
+                if (metadata)
+                {
+                    const r = construct(objectclass);
+                    setproperty(r, null, "name", metadata.name);
+                    const entrytuple_t = tupletype([stringclass, stringclass]);
+                    const r_entries = [];
+                    for (const [k, v] of metadata.entries)
+                    {
+                        r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
+                    }
+                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                    return r;
+                }
+                return null;
+            },
+        })],
+        [$.name($publicns, "variables"), $.method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return null;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                if (!(type instanceof Class))
+                {
+                    return [];
+                }
+                const r = [];
+                for (const [name, trait] of type.prototypenames.dictionary())
+                {
+                    if ((name.ns instanceof Systemns && name.ns.kind != Systemns.PUBLIC) || name.ns instanceof Userns)
+                    {
+                        continue;
+                    }
+            
+                    const ns = name.ns instanceof Systemns ? null : name.ns.uri;
+                    const localname = name.name;
+            
+                    if (trait instanceof Variable)
+                    {
+                        const r_metadata = [];
+                        for (const metadata of trait.metadata)
+                        {
+                            const r = construct(objectclass);
+                            setproperty(r, null, "name", metadata.name);
+                            const entrytuple_t = tupletype([stringclass, stringclass]);
+                            const r_entries = [];
+                            for (const [k, v] of metadata.entries)
+                            {
+                                r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
+                            }
+                            setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                            r_metadata.push(r);
+                        }
+                        const r_metadata_array = [applytype(arrayclass, [objectclass]), new Map(), r_metadata];
+
+                        const r1 = construct(objectclass);
+                        setproperty(r1, null, "metadata", r_metadata_array);
+                        setproperty(r1, null, "namespace", ns);
+                        setproperty(r1, null, "name", localname);
+                        setproperty(r1, null, "type", reflectclass(trait.type));
+                        r.push(r1);
+                    }
+                }
+                return [applytype(arrayclass, [objectclass]), new Map(), r];
+            }
+        })],
+        [$.name($publicns, "isArrayType"), $.method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return false;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                return istypeinstantiatedfrom(type, arrayclass);
             },
         })],
         [$.name($publicns, "isMapType"), $.method({
             static: true,
 
-            exec(classObject)
+            exec(type)
             {
-                if (classObject === null || classObject === undefined)
+                if (type === null || type === undefined)
                 {
                     return false;
                 }
-                if (!istype(classObject, classclass))
+                if (!istype(type, classclass))
                 {
                     throw new ArgumentError("Expected argument of type Class.");
                 }
-                classObject = classObject[CLASS_CLASS_INDEX];
-                return istypeinstantiatedfrom(classObject, mapclass);
+                type = type[CLASS_CLASS_INDEX];
+                return istypeinstantiatedfrom(type, mapclass);
             },
         })],
         [$.name($publicns, "isVectorType"), $.method({
             static: true,
 
-            exec(classObject)
+            exec(type)
             {
-                if (classObject === null || classObject === undefined)
+                if (type === null || type === undefined)
                 {
                     return false;
                 }
-                if (!istype(classObject, classclass))
+                if (!istype(type, classclass))
                 {
                     throw new ArgumentError("Expected argument of type Class.");
                 }
-                classObject = classObject[CLASS_CLASS_INDEX];
-                return istypeinstantiatedfrom(classObject, vectorclass);
+                type = type[CLASS_CLASS_INDEX];
+                return istypeinstantiatedfrom(type, vectorclass);
             },
         })],
     ]
@@ -10038,7 +10116,7 @@ function describe_props(names)
     const r = [];
     for (const [name, trait] of names.dictionary())
     {
-        if (name.ns instanceof Systemns && name.ns.kind != Systemns.PUBLIC)
+        if ((name.ns instanceof Systemns && name.ns.kind != Systemns.PUBLIC) || name.ns instanceof Userns)
         {
             continue;
         }
