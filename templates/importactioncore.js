@@ -19,6 +19,7 @@ import {
     Method,
 
     // Constants
+    untoucheddynamic,
     CONSTRUCTOR_INDEX,
     DYNAMIC_PROPERTIES_INDEX,
     as3ns,

@@ -9,7 +9,7 @@ const SLOT_FIXTURE_START = 2;
 // dynamic class { ...[k]=v }
 export const DYNAMIC_PROPERTIES_INDEX = 1;
 
-const untouchedDynamicProperties = new Map();
+export const untoucheddynamic = new Map();
 
 let $setPrototypeNow = false;
 
@@ -2494,17 +2494,17 @@ export function hasmethod(base, qual, name)
     // Number
     if (typeof base == "number")
     {
-        return hasmethod([numberclass, untouchedDynamicProperties, base], qual, name);
+        return hasmethod([numberclass, untoucheddynamic, base], qual, name);
     }
     // Boolean
     if (typeof base == "boolean")
     {
-        return hasmethod([booleanclass, untouchedDynamicProperties, base], qual, name);
+        return hasmethod([booleanclass, untoucheddynamic, base], qual, name);
     }
     // String
     if (typeof base == "string")
     {
-        return hasmethod([stringclass, untouchedDynamicProperties, base], qual, name);
+        return hasmethod([stringclass, untoucheddynamic, base], qual, name);
     }
     // undefined or null
     return false;
@@ -2825,12 +2825,12 @@ export function getproperty(base, qual, name)
     // Number
     if (typeof base == "number")
     {
-        return getproperty([numberclass, untouchedDynamicProperties, base], qual, name);
+        return getproperty([numberclass, untoucheddynamic, base], qual, name);
     }
     // Boolean
     if (typeof base == "boolean")
     {
-        return getproperty([booleanclass, untouchedDynamicProperties, base], qual, name);
+        return getproperty([booleanclass, untoucheddynamic, base], qual, name);
     }
     // String
     if (typeof base == "string")
@@ -2843,7 +2843,7 @@ export function getproperty(base, qual, name)
         {
             return base[name >> 0];
         }
-        return getproperty([stringclass, untouchedDynamicProperties, base], qual, name);
+        return getproperty([stringclass, untoucheddynamic, base], qual, name);
     }
     // Tuple
     if (base instanceof TupleType)
@@ -3141,19 +3141,19 @@ export function setproperty(base, qual, name, value)
     // Number
     if (typeof base == "number")
     {
-        setproperty([numberclass, untouchedDynamicProperties, base], qual, name, value);
+        setproperty([numberclass, untoucheddynamic, base], qual, name, value);
         return;
     }
     // Boolean
     if (typeof base == "boolean")
     {
-        setproperty([booleanclass, untouchedDynamicProperties, base], qual, name, value);
+        setproperty([booleanclass, untoucheddynamic, base], qual, name, value);
         return;
     }
     // String
     if (typeof base == "string")
     {
-        setproperty([stringclass, untouchedDynamicProperties, base], qual, name, value);
+        setproperty([stringclass, untoucheddynamic, base], qual, name, value);
         return;
     }
 
@@ -3379,17 +3379,17 @@ export function deleteproperty(base, qual, name)
     // Number
     if (typeof base == "number")
     {
-        return deleteproperty([numberclass, untouchedDynamicProperties, base], qual, name);
+        return deleteproperty([numberclass, untoucheddynamic, base], qual, name);
     }
     // Boolean
     if (typeof base == "boolean")
     {
-        return deleteproperty([booleanclass, untouchedDynamicProperties, base], qual, name);
+        return deleteproperty([booleanclass, untoucheddynamic, base], qual, name);
     }
     // String
     if (typeof base == "string")
     {
-        return deleteproperty([stringclass, untouchedDynamicProperties, base], qual, name);
+        return deleteproperty([stringclass, untoucheddynamic, base], qual, name);
     }
     // Tuple
     if (base instanceof TupleType)
@@ -3581,12 +3581,12 @@ export function callproperty(base, qual, name, ...args)
     // Number
     if (typeof base == "number")
     {
-        return callproperty([numberclass, untouchedDynamicProperties, base], qual, name, ...args);
+        return callproperty([numberclass, untoucheddynamic, base], qual, name, ...args);
     }
     // Boolean
     if (typeof base == "boolean")
     {
-        return callproperty([booleanclass, untouchedDynamicProperties, base], qual, name, ...args);
+        return callproperty([booleanclass, untoucheddynamic, base], qual, name, ...args);
     }
     // String
     if (typeof base == "string")
@@ -3607,7 +3607,7 @@ export function callproperty(base, qual, name, ...args)
                 return base.codePointAt(Number(args[0] ?? 0)) ?? 0;
             }
         }
-        return callproperty([stringclass, untouchedDynamicProperties, base], qual, name, ...args);
+        return callproperty([stringclass, untoucheddynamic, base], qual, name, ...args);
     }
     // Tuple
     if (base instanceof TupleType)
@@ -4534,7 +4534,7 @@ export function construct(classobj, ...args)
     }
     if (classobj === arrayclass || classobj === vectorclass || classobj === mapclass)
     {
-        throw new TypeError("Constructor is type parameterized.");
+        throw new TypeError("Constructor is a parameterized type and requires type arguments.");
     }
     const instance = [classobj, new Map()];
     classobj.ctor.apply(instance, args);
@@ -9853,7 +9853,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                 {
                     throw new ReferenceError("Cannot enumerate entries of a weak Map.");
                 }
-                const list = Array.from(m.entries()).map(entry => [tupletype([keyType, valueType]), untouchedDynamicProperties, entry]);
+                const list = Array.from(m.entries()).map(entry => [tupletype([keyType, valueType]), untoucheddynamic, entry]);
                 return [applytype(arrayclass, [tupletype([keyType, valueType])]), new Map(), list];
             },
         })],
