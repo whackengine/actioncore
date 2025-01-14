@@ -4,7 +4,7 @@ ActionScript instance objects are represented as a JavaScript `Array` in the for
 
 ## Tuples
 
-Tuples are in the same compatible format, `[tupleType, unusedDynamicProperties, element1, ...elementN]`.
+Tuples are in the same compatible format, `[tupleType, unusedDynamicProperties, element1, ...elementN]` (here, `unusedDynamicProperties` can be simply the `untoucheddynamic` map).
 
 ## Array.\<T>
 
@@ -22,3 +22,5 @@ Like arrays, maps have a constructor that is represented by a `SpecialTypeAfterS
 
 Parameterized classes other than Array, Vector and Map are simply erased and are
 treated as normal classes. Type parameters of interfaces are always erased as well.
+
+Where type parameters are used, they either fade or are replaced by the `*` type.
