@@ -729,14 +729,23 @@ export class SpecialTypeAfterSub extends ActionCoreType
  */
 const appliedtypes = new Map();
 
+let skipParameterizedMap = true;
+
 export function applytype(original, argumentslist)
 {
-    assert([arrayclass, vectorclass, mapclass].indexOf(original) != -1, "Cannot apply types over given type.");
+    if (skipParameterizedMap)
+    {
+        assert([arrayclass, vectorclass].indexOf(original) != -1, "Cannot apply types over given type.");
+    }
+    else
+    {
+        assert([arrayclass, vectorclass, mapclass].indexOf(original) != -1, "Cannot apply types over given type.");
+    }
 
     const paramlen = new Map([
         [arrayclass, 1],
         [vectorclass, 1],
-        [mapclass, 2],
+        [skipParameterizedMap ? objectclass : mapclass, 2],
     ]).get(original);
 
     assert(paramlen == argumentslist.length, "Incorrect number of type arguments.");
@@ -2051,6 +2060,10 @@ export function getattribute(base, qual, name)
     {
         throw new ReferenceError("Cannot read attribute of a class static object.");
     }
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot read attribute of tuple type.");
+    }
     if (base === null)
     {
         throw new ReferenceError("Cannot read attribute of null.");
@@ -2112,6 +2125,10 @@ export function setattribute(base, qual, name, value)
     if (base instanceof Class || base instanceof Interface)
     {
         throw new ReferenceError("Cannot set attribute of a class static object.");
+    }
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot set attribute of tuple type.");
     }
     if (base === null)
     {
@@ -2182,6 +2199,10 @@ export function deleteattribute(base, qual, name)
     if (base instanceof Class || base instanceof Interface)
     {
         throw new ReferenceError("Cannot delete attribute of a class static object.");
+    }
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot delete attribute of tuple type.");
     }
     if (base === null)
     {
@@ -2296,6 +2317,11 @@ export function getdescendants(base, qual, name)
     {
         throw new ReferenceError("Cannot get descendants of a class static object.");
     }
+
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot get descendants of tuple type.");
+    }
     if (base === null)
     {
         throw new ReferenceError("Cannot get descendants of null.");
@@ -2315,7 +2341,7 @@ export function hasmethod(base, qual, name)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return notqual ? typeof base[name] == "function" : false;
         }
@@ -2520,7 +2546,7 @@ export function getproperty(base, qual, name)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return notqual ? base[name] : undefined;
         }
@@ -2843,7 +2869,7 @@ export function setproperty(base, qual, name, value)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             if (notqual)
             {
@@ -3155,7 +3181,7 @@ export function deleteproperty(base, qual, name)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return notqual ? delete base[name] : false;
         }
@@ -3389,7 +3415,7 @@ export function callproperty(base, qual, name, ...args)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return notqual ? base[name].apply(base, args) : undefined;
         }
@@ -3407,29 +3433,30 @@ export function callproperty(base, qual, name, ...args)
                 }
             }
 
-            // Read collection properties (Array, Vector[$double|$float|$int|$uint], Map)
+            // Read collection properties (Array, Vector[$double|$float|$int|$uint], tuple)
 
-            if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 return call(base[ARRAY_SUBARRAY_INDEX][name >> 0], ...args);
             }
-            if (istype(base, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
-                let i = name >> 0;
-                if (i < 0 || i >= base[VECTOR_SUBARRAY_INDEX].length)
+                let i = name >> 0, arr = base[VECTOR_SUBARRAY_INDEX];
+                if (i < 0 || i >= arr.length)
                 {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + base[VECTOR_SUBARRAY_INDEX].length + ").");
+                    throw new ReferenceError("Index " + i + " out of bounds (length=" + arr.length + ").");
                 }
-                return call(base[VECTOR_SUBARRAY_INDEX][i], ...args);
+                const el = arr instanceof FlexNumberVector ? arr.get(i) : arr[i];
+                return call(el, ...args);
             }
-            if ((istype(base, vectordoubleclass) || istype(base, vectorfloatclass) || istype(base, vectorintclass) || istype(base, vectoruintclass)) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (ctor instanceof TupleType && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
+                let i = name >> 0, l = ctor.elementtypes.length;
                 if (i < 0 || i >= l)
                 {
                     throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
                 }
-                return call(base[VECTOR_SUBARRAY_INDEX].get(i), ...args);
+                return call(base[2 + i], ...args);
             }
         }
 
@@ -3626,7 +3653,7 @@ function preincreaseproperty(base, qual, name, incVal)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             if (notqual)
             {
@@ -3652,7 +3679,7 @@ function preincreaseproperty(base, qual, name, incVal)
         {
             // Assign collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
-            if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 const arr = base[ARRAY_SUBARRAY_INDEX];
                 if (typeof arr[name >> 0] !== "number")
@@ -3662,32 +3689,26 @@ function preincreaseproperty(base, qual, name, incVal)
                 arr[name >> 0] += incVal;
                 return arr[name >> 0];
             }
-            if (istype(base, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 let i = name >> 0;
-                if (i < 0 || i >= base[VECTOR_SUBARRAY_INDEX].length)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + base[VECTOR_SUBARRAY_INDEX].length + ").");
-                }
                 const arr = base[VECTOR_SUBARRAY_INDEX];
+                if (i < 0 || i >= arr.length)
+                {
+                    throw new ReferenceError("Index " + i + " out of bounds (length=" + arr.length + ").");
+                }
+                if (arr instanceof FlexNumberVector)
+                {
+                    let v = arr.get(i) + incVal;
+                    arr.set(i, v);
+                    return v;
+                }
                 if (typeof arr[i] !== "number")
                 {
                     throw new TypeError("Cannot increment or decrement a non numeric value.");
                 }
                 arr[i] += incVal;
                 return arr[i];
-            }
-            if ((istype(base, vectordoubleclass) || istype(base, vectorfloatclass) || istype(base, vectorintclass) || istype(base, vectoruintclass)) && !isNaN(Number(name)) && Number(name) == name >> 0)
-            {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
-                if (i < 0 || i >= l)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
-                }
-                const flexvec = base[VECTOR_SUBARRAY_INDEX];
-                let v = flexvec.get(i) + incVal;
-                flexvec.set(i, v);
-                return v;
             }
             if (istype(base, bytearrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -3701,7 +3722,7 @@ function preincreaseproperty(base, qual, name, incVal)
                 ba.set(i, v);
                 return v;
             }
-            if (istype(base, mapclass))
+            if (istypeinstantiatedfrom(ctor, mapclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
@@ -3716,6 +3737,10 @@ function preincreaseproperty(base, qual, name, incVal)
                 v += incVal;
                 mm.set(name, v);
                 return v;
+            }
+            if (ctor instanceof TupleType)
+            {
+                throw new TypeError("Cannot update tuple elements.");
             }
         }
 
@@ -3943,7 +3968,7 @@ function postincreaseproperty(base, qual, name, incVal)
     {
         const notqual = qualincludespublic(qual);
 
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             if (notqual)
             {
@@ -3970,7 +3995,7 @@ function postincreaseproperty(base, qual, name, incVal)
         {
             // Assign collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
-            if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 const arr = base[ARRAY_SUBARRAY_INDEX];
                 const v = arr[name >> 0];
@@ -3981,32 +4006,26 @@ function postincreaseproperty(base, qual, name, incVal)
                 arr[name >> 0] += incVal;
                 return v;
             }
-            if (istype(base, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 let i = name >> 0;
-                if (i < 0 || i >= base[VECTOR_SUBARRAY_INDEX].length)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + base[VECTOR_SUBARRAY_INDEX].length + ").");
-                }
                 const arr = base[VECTOR_SUBARRAY_INDEX];
+                if (i < 0 || i >= arr.length)
+                {
+                    throw new ReferenceError("Index " + i + " out of bounds (length=" + arr.length + ").");
+                }
+                if (arr instanceof FlexNumberVector)
+                {
+                    const v = arr.get(i);
+                    arr.set(i, v + incVal);
+                    return v;
+                }
                 const v = arr[i];
                 if (typeof v !== "number")
                 {
                     throw new TypeError("Cannot increment or decrement a non numeric value.");
                 }
                 arr[i] += incVal;
-                return v;
-            }
-            if ((istype(base, vectordoubleclass) || istype(base, vectorfloatclass) || istype(base, vectorintclass) || istype(base, vectoruintclass)) && !isNaN(Number(name)) && Number(name) == name >> 0)
-            {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
-                if (i < 0 || i >= l)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
-                }
-                const flexvec = base[VECTOR_SUBARRAY_INDEX];
-                const v = flexvec.get(i);
-                flexvec.set(i, v + incVal);
                 return v;
             }
             if (istype(base, bytearrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
@@ -4021,7 +4040,7 @@ function postincreaseproperty(base, qual, name, incVal)
                 ba.set(i, v + incVal);
                 return v;
             }
-            if (istype(base, mapclass))
+            if (istypeinstantiatedfrom(ctor, mapclass))
             {
                 const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
@@ -4035,6 +4054,10 @@ function postincreaseproperty(base, qual, name, incVal)
                 }
                 mm.set(name, v + incVal);
                 return v;
+            }
+            if (ctor instanceof TupleType)
+            {
+                throw new TypeError("Cannot update tuple elements.");
             }
         }
 
@@ -4245,7 +4268,7 @@ function postincreaseproperty(base, qual, name, incVal)
 
 export function call(obj, ...args)
 {
-    if ((obj instanceof Array && !(obj[CONSTRUCTOR_INDEX] instanceof Class)) || typeof obj == "function")
+    if ((obj instanceof Array && !(obj[CONSTRUCTOR_INDEX] instanceof ActionCoreType)) || typeof obj == "function")
     {
         return obj(...args);
     }
@@ -4390,7 +4413,7 @@ export function istype(value, type)
     if (value instanceof Array)
     {
         const instanceClass = value[CONSTRUCTOR_INDEX];
-        if (!(instanceClass instanceof Class))
+        if (!(instanceClass instanceof ActionCoreType))
         {
             return value instanceof type;
         }
@@ -4547,7 +4570,7 @@ export function construct(classobj, ...args)
     {
         classobj = classobj[CLASS_CLASS_INDEX];
     }
-    if (!(classobj instanceof Class))
+    if (!(classobj instanceof Class || classobj instanceof SpecialTypeAfterSub))
     {
         throw new TypeError("Constructor must be a Class object.");
     }
@@ -4566,6 +4589,10 @@ export function construct(classobj, ...args)
             return args.length == 0 ? false : !!args[0];
         case stringclass:
             return args.length == 0 ? "" : tostring(args[0]);
+    }
+    if (classobj === arrayclass || classobj === vectorclass || classobj === mapclass)
+    {
+        throw new TypeError("Constructor is type parameterized.");
     }
     const instance = [classobj, new Map()];
     classobj.ctor.apply(instance, args);
@@ -4587,15 +4614,19 @@ export function tostring(arg)
     }
     if (!hasmethod(arg, null, "toString"))
     {
-        if (arg instanceof Array && arg[CONSTRUCTOR_INDEX] instanceof Class)
+        const ctor = arg[CONSTRUCTOR_INDEX];
+
+        // Tuple returns a comma-separated list of elements
+        if (ctor instanceof TupleType)
         {
-            const name = (arg[CONSTRUCTOR_INDEX]).name;
-            return "[object " + name + "]";
+            return arg.slice(2).map(v => tostring(v)).join(",");
         }
-        else
+        // Other types print [object f.q.N] by default
+        if (arg instanceof Array && ctor instanceof ActionCoreType)
         {
-            return String(arg);
+            return "[object " + ctor.name + "]";
         }
+        return String(arg);
     }
     return String(callproperty(arg, null, "toString"));
 }
@@ -5256,17 +5287,17 @@ const internedclassobjs = new Map();
 /**
  * Returns a `Class` object for a class or interface.
  */
-export function reflectclass(classOrItrfc)
+export function reflectclass(type)
 {
-    if (!(classOrItrfc instanceof Class || classOrItrfc instanceof Interface))
+    if (!(type instanceof ActionCoreType))
     {
         throw new TypeError("Cannot reflect a value as a Class object.");
     }
-    let obj = internedclassobjs.get(classOrItrfc);
+    let obj = internedclassobjs.get(type);
     if (!obj)
     {
-        obj = [classclass, new Map(), classOrItrfc];
-        internedclassobjs.set(classOrItrfc, obj);
+        obj = [classclass, new Map(), type];
+        internedclassobjs.set(type, obj);
     }
     return obj;
 }
@@ -9921,6 +9952,8 @@ export const mapclass = defineclass(name($publicns, "Map"),
         })],
     ]
 );
+
+skipParameterizedMap = false;
 
 $publicns = packagens("whack.utils");
 
