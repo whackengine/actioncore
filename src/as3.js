@@ -766,6 +766,11 @@ export function applytype(original, argumentslist)
 
 export class TupleType extends ActionCoreType
 {
+    static staticnames = new Names();
+    static staticvarvals = new Map();
+    static prototypenames = new Names();
+    static prototypevarslots = [];
+
     elementtypes;
 
     constructor(elementtypes)
@@ -779,9 +784,61 @@ export class TupleType extends ActionCoreType
         return objectclass;
     }
 
+    get interfaces()
+    {
+        return [];
+    }
+
     get name()
     {
         return "Tuple" + randomHexID();
+    }
+
+    get final()
+    {
+        return true;
+    }
+
+    get dynamic()
+    {
+        return false;
+    }
+
+    get metadata()
+    {
+        return [];
+    }
+
+    get ctor()
+    {
+        return null;
+    }
+
+    get staticnames()
+    {
+        return TupleType.staticnames;
+    }
+
+    get prototypenames()
+    {
+        return TupleType.prototypenames;
+    }
+
+    get staticvarvals()
+    {
+        return TupleType.staticvarvals;
+    }
+
+    get prototypevarslots()
+    {
+        return TupleType.prototypevarslots;
+    }
+
+    recursivedescclasslist()
+    {
+        const result = [this];
+        result.push.apply(result, this.baseclass.recursivedescclasslist());
+        return result;
     }
 
     issubtypeof(arg)
@@ -1949,7 +2006,7 @@ export function getattribute(base, qual, name)
     // instance
     if (base instanceof Array)
     {
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return undefined;
         }
@@ -2009,7 +2066,7 @@ export function setattribute(base, qual, name, value)
     // instance
     if (base instanceof Array)
     {
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return;
         }
@@ -2071,7 +2128,7 @@ export function deleteattribute(base, qual, name)
     // instance
     if (base instanceof Array)
     {
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return false;
         }
@@ -2156,7 +2213,7 @@ export function getdescendants(base, qual, name)
     // instance
     if (base instanceof Array)
     {
-        if (!(base[CONSTRUCTOR_INDEX] instanceof Class))
+        if (!(base[CONSTRUCTOR_INDEX] instanceof ActionCoreType))
         {
             return undefined;
         }
@@ -2273,7 +2330,11 @@ export function hasmethod(base, qual, name)
                 return istype(base[DYNAMIC_PROPERTIES_INDEX].get(String(name)), functionclass);
             }
 
-            if (istype(base, mapclass))
+            /*
+             * Commented out as that does not make sense
+             * as key-values holding function are called by .call(k) instead.
+             *
+            if (istypeinstantiatedfrom(ctor, mapclass))
             {
                 const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap)
@@ -2285,6 +2346,7 @@ export function hasmethod(base, qual, name)
                     return istype(mm.get(name), functionclass);
                 }
             }
+            */
         }
 
         // instance prototype
@@ -2543,7 +2605,7 @@ export function getproperty(base, qual, name)
 
         if (notqual && !isproxy)
         {
-            if (istype(base, mapclass))
+            if (istypeinstantiatedfrom(ctor, mapclass))
             {
                 const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
@@ -2558,27 +2620,29 @@ export function getproperty(base, qual, name)
                 return base[DYNAMIC_PROPERTIES_INDEX].get(String(name));
             }
 
-            if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 return base[ARRAY_SUBARRAY_INDEX][name >> 0];
             }
-            if (istype(base, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
+                const arr = base[VECTOR_SUBARRAY_INDEX];
                 let i = name >> 0;
-                if (i < 0 || i >= base[VECTOR_SUBARRAY_INDEX].length)
+                if (i < 0 || i >= arr.length)
                 {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + base[VECTOR_SUBARRAY_INDEX].length + ").");
+                    throw new ReferenceError("Index " + i + " out of bounds (length=" + arr.length + ").");
                 }
-                return base[VECTOR_SUBARRAY_INDEX][i];
+                return arr instanceof FlexNumberVector ? arr.get(i) : arr[i];
             }
-            if ((istype(base, vectordoubleclass) || istype(base, vectorfloatclass) || istype(base, vectorintclass) || istype(base, vectoruintclass)) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (ctor instanceof TupleType)
             {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
+                const l = ctor.elementtypes.length;
+                let i = name >> 0;
                 if (i < 0 || i >= l)
                 {
                     throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
                 }
-                return base[VECTOR_SUBARRAY_INDEX].get(i);
+                return base[2 + i];
             }
             if (istype(base, bytearrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -2755,6 +2819,11 @@ export function getproperty(base, qual, name)
         }
         return getproperty([stringclass, untouchedDynamicProperties, base], qual, name);
     }
+    // Tuple
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot read property of tuple type.");
+    }
     // null
     if (base === null)
     {
@@ -2826,73 +2895,59 @@ export function setproperty(base, qual, name, value)
 
         if (notqual && !isproxy)
         {
-            if (istype(base, mapclass))
+            if (istypeinstantiatedfrom(ctor, mapclass))
             {
+                const [keyType, valueType] = ctor.argumentslist;
                 const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
                 {
                     throw new ReferenceError("Weak key must be a managed Object.");
                 }
+                if (!(istypeornull(name, keyType) && istypeornull(value, valueType)))
+                {
+                    throw new TypeError("Expected key type " + nameoftype(keyType) + " and value type " + nameoftype(valueType) + ".");
+                }
                 mm.set(name, value);
                 return;
             }
 
-            if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
+                const [elemType] = ctor.argumentslist;
+                if (istypeornull(value, elemType))
+                {
+                    throw new TypeError("Expected value of type " + nameoftype(elemType));
+                }
                 base[ARRAY_SUBARRAY_INDEX][name >> 0] = value;
                 return;
             }
-            if (istype(base, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
-                let i = name >> 0;
-                if (i < 0 || i >= base[VECTOR_SUBARRAY_INDEX].length)
+                const [elemType] = ctor.argumentslist;
+                let i = name >> 0, arr = base[VECTOR_SUBARRAY_INDEX];
+                if (i < 0 || i >= arr.length)
                 {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + base[VECTOR_SUBARRAY_INDEX].length + ").");
+                    throw new ReferenceError("Index " + i + " out of bounds (length=" + arr.length + ").");
                 }
-                base[VECTOR_SUBARRAY_INDEX][i] = value;
+                if (arr instanceof FlexNumberVector)
+                {
+                    if (typeof value !== "number")
+                    {
+                        throw new TypeError("Cannot assign incompatible value.");
+                    }
+                    arr.set(i, value);
+                    return;
+                }
+                if (istypeornull(value, elemType))
+                {
+                    throw new TypeError("Expected value of type " + nameoftype(elemType));
+                }
+                arr[i] = value;
                 return;
             }
-            if ((istype(base, vectordoubleclass) || istype(base, vectorfloatclass)) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (ctor instanceof TupleType)
             {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
-                if (i < 0 || i >= l)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
-                }
-                if (typeof value !== "number")
-                {
-                    throw new TypeError("Cannot assign incompatible value.");
-                }
-                base[VECTOR_SUBARRAY_INDEX].set(i, value);
-                return;
-            }
-            if (istype(base, vectorintclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
-            {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
-                if (i < 0 || i >= l)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
-                }
-                if (typeof value !== "number")
-                {
-                    throw new TypeError("Cannot assign incompatible value.");
-                }
-                base[VECTOR_SUBARRAY_INDEX].set(i, value >> 0);
-                return;
-            }
-            if (istype(base, vectoruintclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
-            {
-                let i = name >> 0, l = base[VECTOR_SUBARRAY_INDEX].length;
-                if (i < 0 || i >= l)
-                {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
-                }
-                if (typeof value !== "number")
-                {
-                    throw new TypeError("Cannot assign incompatible value.");
-                }
-                base[VECTOR_SUBARRAY_INDEX].set(i, value >>> 0);
-                return;
+                throw new TypeError("Cannot assign to a tuple element.");
             }
             if (istype(base, bytearrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -3075,6 +3130,12 @@ export function setproperty(base, qual, name, value)
         setproperty([stringclass, untouchedDynamicProperties, base], qual, name, value);
         return;
     }
+
+    // Tuple
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot read property of tuple type.");
+    }
     // null
     if (base === null)
     {
@@ -3196,7 +3257,7 @@ export function deleteproperty(base, qual, name)
 
         if (notqual && !isproxy)
         {
-            if (istype(base, mapclass))
+            if (istypeinstantiatedfrom(ctor, mapclass))
             {
                 const mm = base[MAP_PROPERTIES_INDEX];
                 if (mm instanceof WeakMap && !(name instanceof Array))
@@ -3213,13 +3274,17 @@ export function deleteproperty(base, qual, name)
 
             // Delete collection properties (Array, Vector[$double|$float|$int|$uint], Map)
 
-            if (istype(base, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, arrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 return delete base[ARRAY_SUBARRAY_INDEX][name >> 0];
             }
-            if ((istype(base, vectorclass) || istype(base, vectordoubleclass) || istype(base, vectorfloatclass) || istype(base, vectorintclass) || istype(base, vectoruintclass)) && !isNaN(Number(name)) && Number(name) == name >> 0)
+            if (istypeinstantiatedfrom(ctor, vectorclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
                 throw new TypeError("Cannot delete vector indices.");
+            }
+            if (ctor instanceof TupleType && !isNaN(Number(name)) && Number(name) == name >> 0)
+            {
+                throw new TypeError("Cannot delete tuple indices.");
             }
         }
 
@@ -3299,6 +3364,11 @@ export function deleteproperty(base, qual, name)
     if (typeof base == "string")
     {
         return deleteproperty([stringclass, untouchedDynamicProperties, base], qual, name);
+    }
+    // Tuple
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot delete property of tuple type.");
     }
     // null
     if (base === null)
@@ -3511,6 +3581,11 @@ export function callproperty(base, qual, name, ...args)
             }
         }
         return callproperty([stringclass, untouchedDynamicProperties, base], qual, name, ...args);
+    }
+    // Tuple
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot read property of tuple type.");
     }
     // null
     if (base === null)
@@ -3844,6 +3919,11 @@ function preincreaseproperty(base, qual, name, incVal)
     {
         throw new TypeError("Cannot increment or decrement from a String object.");
     }
+    // Tuple
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot read property of tuple type.");
+    }
     // null
     if (base === null)
     {
@@ -4149,6 +4229,11 @@ function postincreaseproperty(base, qual, name, incVal)
     {
         throw new TypeError("Cannot increment or decrement from a String object.");
     }
+    // Tuple
+    if (base instanceof TupleType)
+    {
+        throw new ReferenceError("Cannot read property of tuple type.");
+    }
     // null
     if (base === null)
     {
@@ -4310,10 +4395,6 @@ export function istype(value, type)
             return value instanceof type;
         }
 
-        if (type instanceof Class)
-        {
-            return instanceClass.isbasetypeof(type);
-        }
         if (type instanceof Interface)
         {
             const instanceClasses = instanceClass.recursivedescclasslist();
@@ -4329,6 +4410,7 @@ export function istype(value, type)
                 }
             }
         }
+        return instanceClass.isbasetypeof(type);
     }
     else if (typeof value == "object" || typeof value == "symbol")
     {
@@ -4370,15 +4452,11 @@ export function issubtype(value, type)
     if (value instanceof Array)
     {
         const instanceClass = value[CONSTRUCTOR_INDEX];
-        if (!(instanceClass instanceof Class))
+        if (!(instanceClass instanceof ActionCoreType))
         {
             return value instanceof type;
         }
 
-        if (type instanceof Class)
-        {
-            return instanceClass.issubtypeof(type);
-        }
         if (type instanceof Interface)
         {
             const targetItrfcs = type.recursivedescinterfacelist();
@@ -4394,6 +4472,8 @@ export function issubtype(value, type)
                 }
             }
         }
+
+        return instanceClass.issubtypeof(type);
     }
     else if (typeof value == "object" || typeof value == "symbol")
     {
