@@ -1592,10 +1592,10 @@ export function setglobal(qual, name, value)
     {
         if (trait.readonly && globalvarvals.has(trait))
         {
-            throw new ReferenceError("Cannot assign to read-only property.");
+            throw new ReferenceError("Cannot assign to read-only property " + trait.name + ".");
         }
         globalvarvals.set(trait, coerceorfail(value, trait.type, () => {
-            throw new TypeError("Cannot assign incompatible value.");
+            throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + nameoftype(trait.type) + ".");
         }));
         return;
     }
@@ -1604,20 +1604,20 @@ export function setglobal(qual, name, value)
         const setter = trait.setter;
         if (setter === null)
         {
-            throw new ReferenceError("Cannot assign to read-only property.");
+            throw new ReferenceError("Cannot assign to read-only property " + trait.name + ".");
         }
         setter.exec.apply(undefined, [coerceorfail(value, trait.type, () => {
-            throw new TypeError("Cannot assign incompatible value.");
+            throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + nameoftype(trait.type) + ".");
         })]);
         return;
     }
     if (trait instanceof Method)
     {
-        throw new ReferenceError("Cannot assign to read-only method.");
+        throw new ReferenceError("Cannot assign to read-only method " + trait.name + ".");
     }
     if (trait instanceof Nsalias)
     {
-        throw new ReferenceError("Cannot assign to read-only namespace.");
+        throw new ReferenceError("Cannot assign to read-only namespace " + trait.name + ".");
     }
     if (trait)
     {
@@ -3057,10 +3057,10 @@ export function setproperty(base, qual, name, value)
                     const i = ctor.prototypevarslots.indexOf(itrait);
                     if (itrait.readonly && typeof base[SLOT_FIXTURE_START + i] !== "undefined")
                     {
-                        throw new ReferenceError("Cannot assign to read-only property.");
+                        throw new ReferenceError("Cannot assign to read-only property " + itrait.name + ".");
                     }
                     base[SLOT_FIXTURE_START + i] = coerceorfail(value, itrait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value.");
+                        throw new TypeError("Cannot assign incompatible value to " + itrait.name + ": expected " + nameoftype(itrait.type) + ".");
                     });
                     return;
                 }
@@ -3070,21 +3070,21 @@ export function setproperty(base, qual, name, value)
                     const setter = itrait.setter;
                     if (setter === null)
                     {
-                        throw new ReferenceError("Cannot assign to read-only property.");
+                        throw new ReferenceError("Cannot assign to read-only property " + itrait.name + ".");
                     }
                     setter.exec.call(base, coerceorfail(value, itrait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value.");
+                        throw new TypeError("Cannot assign incompatible value to " + itrait.name + ": expected " + nameoftype(itrait.type) + ".");
                     }));
                     return;
                 }
                 // bound method
                 if (itrait instanceof Method)
                 {
-                    throw new ReferenceError("Cannot assign to read-only method.");
+                    throw new ReferenceError("Cannot assign to read-only method " + itrait.name + ".");
                 }
                 if (itrait instanceof Nsalias)
                 {
-                    throw new ReferenceError("Cannot assign to read-only namespace.");
+                    throw new ReferenceError("Cannot assign to read-only namespace " + itrait.name + ".");
                 }
                 
                 throw new ReferenceError("Internal error");
@@ -3139,10 +3139,10 @@ export function setproperty(base, qual, name, value)
                 {
                     if (trait.readonly && c1.staticvarvals.has(trait))
                     {
-                        throw new ReferenceError("Cannot assign to read-only property.");
+                        throw new ReferenceError("Cannot assign to read-only property '" + trait.name + "'.");
                     }
                     c1.staticvarvals.set(trait, coerceorfail(value, trait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value.");
+                        throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + nameoftype(trait.type) + ".");
                     }));
                     return;
                 }
@@ -3152,22 +3152,22 @@ export function setproperty(base, qual, name, value)
                     const setter = trait.getter;
                     if (setter === null)
                     {
-                        throw new ReferenceError("Cannot assign to read-only property.");
+                        throw new ReferenceError("Cannot assign to read-only property " + trait.name + ".");
                     }
                     setter.exec.apply(undefined, [coerceorfail(value, trait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value.");
+                        throw new TypeError("Cannot assign incompatible value to " + trait.name + ": expected " + nameoftype(trait.type) + ".");
                     })]);
                     return;
                 }
                 // method
                 if (trait instanceof Method)
                 {
-                    throw new TypeError("Cannot assign to read-only method.");
+                    throw new TypeError("Cannot assign to read-only method " + trait.name + ".");
                 }
                 // namespace
                 if (trait instanceof Nsalias)
                 {
-                    throw new TypeError("Cannot assign to read-only namespace.");
+                    throw new TypeError("Cannot assign to read-only namespace " + trait.name + ".");
                 }
                 throw new ReferenceError("Internal error");
             }
