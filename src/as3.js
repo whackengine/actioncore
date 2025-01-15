@@ -369,6 +369,7 @@ export class Class extends ActionCoreType
 {
     baseclass = null;
     interfaces = [];
+    limitedknownsubclasses = [];
 
     /**
      * Fully package qualified name.
@@ -486,6 +487,10 @@ export function defineclass(name, options, items)
         assert(!!objectclass, "Class definitions must follow the Object class.");
         class1.baseclass = options.extendslist ?? objectclass;
         assert(!class1.baseclass.final, "Cannot extend " + class1.baseclass.name);
+        if (class1.baseclass !== objectclass)
+        {
+            class1.baseclass.limitedknownsubclasses.push(class1);
+        }
         if ($setPrototypeNow)
         {
             class1.ecmaprototype = construct(objectclass);
@@ -646,6 +651,11 @@ export class SpecialTypeAfterSub extends ActionCoreType
         return this.original.interfaces;
     }
 
+    get limitedknownsubclasses()
+    {
+        return [];
+    }
+
     get name()
     {
         return this.original.name + "." + "<" + this.argumentslist.map(a => nameoftype(a)).join(", ") + ">";
@@ -780,6 +790,11 @@ export class TupleType extends ActionCoreType
     }
 
     get interfaces()
+    {
+        return [];
+    }
+
+    get limitedknownsubclasses()
     {
         return [];
     }
@@ -7101,7 +7116,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (!(type instanceof Class))
                 {
-                    return [];
+                    return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
                 const r = [];
                 for (const [name, trait] of type.prototypenames.dictionary())
@@ -7183,6 +7198,27 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     return null;
                 }
                 return type.baseclass ? reflectclass(type.baseclass) : null;
+            }
+        })],
+        [name($publicns, "subclasses"), method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return [applytype(arrayclass, [classclass]), new Map(), []];
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                if (type instanceof Class)
+                {
+                    return [applytype(arrayclass, [classclass]), new Map(), type.limitedknownsubclasses.map(c => reflectclass(c))];
+                }
+                return [applytype(arrayclass, [classclass]), new Map(), []];
             }
         })],
         [name($publicns, "arrayOf"), method({
@@ -10762,6 +10798,7 @@ const $builtinclasses = [
     classclass,
     dateclass,
     functionclass,
+    thereflectclass,
     arrayclass,
     vectorclass,
     promiseclass,
