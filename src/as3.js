@@ -340,7 +340,18 @@ export class ActionCoreType
         return false;
     }
 
+    /**
+     * Fully qualified name of the type.
+     */
     get name()
+    {
+        return this.localname;
+    }
+
+    /**
+     * Local name of the type.
+     */
+    get localname()
     {
         return "$" + randomHexID();
     }
@@ -374,7 +385,8 @@ export class Class extends ActionCoreType
     /**
      * Fully package qualified name.
      */
-    name;
+    m_name;
+    m_localname;
     final;
     dynamic;
     metadata;
@@ -409,6 +421,23 @@ export class Class extends ActionCoreType
         this.dynamic = dynamic;
         this.metadata = metadata;
         this.ctor = ctor;
+    }
+
+    get name()
+    {
+        return this.m_name;
+    }
+
+    set name(val)
+    {
+        this.m_name = val;
+        const s = this.m_name.split(".");
+        this.m_localname = s[s.length - 1];
+    }
+
+    get localname()
+    {
+        return this.m_localname;
     }
 
     recursivedescclasslist()
@@ -549,7 +578,8 @@ export class Interface extends ActionCoreType
     /**
      * Fully package qualified name.
      */
-    name;
+    m_name;
+    m_localname;
     metadata;
 
     prototypenames = new Names();
@@ -560,7 +590,24 @@ export class Interface extends ActionCoreType
         this.name = name;
         this.metadata = metadata;
     }
-    
+
+    get name()
+    {
+        return this.m_name;
+    }
+
+    set name(val)
+    {
+        this.m_name = val;
+        const s = this.m_name.split(".");
+        this.m_localname = s[s.length - 1];
+    }
+
+    get localname()
+    {
+        return this.m_localname;
+    }
+
     recursivedescinterfacelist()
     {
         const result = [this];
@@ -659,6 +706,11 @@ export class SpecialTypeAfterSub extends ActionCoreType
     get name()
     {
         return this.original.name + "." + "<" + this.argumentslist.map(a => nameoftype(a)).join(", ") + ">";
+    }
+
+    get localname()
+    {
+        return this.original.localname;
     }
 
     get final()
@@ -800,6 +852,11 @@ export class TupleType extends ActionCoreType
     }
 
     get name()
+    {
+        return this.localname;
+    }
+
+    get localname()
     {
         return "[" + this.elementtypes.map(t => nameoftype(t)).join(", ") + "]";
     }
@@ -7099,6 +7156,23 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 }
                 return null;
             },
+        })],
+        [name($publicns, "typeLocalName"), method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return "*";
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                return type.localname;
+            }
         })],
         [name($publicns, "variables"), method({
             static: true,
