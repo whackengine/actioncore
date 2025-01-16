@@ -4607,7 +4607,7 @@ export function construct(classobj, ...args)
     }
     if (!(classobj instanceof Class || classobj instanceof SpecialTypeAfterSub))
     {
-        throw new TypeError("Constructor must be a Class object.");
+        throw new TypeError("Constructor must be a class type.");
     }
     switch (classobj)
     {
@@ -7142,6 +7142,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 {
                     throw new ArgumentError("Expected argument of type Class.");
                 }
+                name = tostring(name);
                 type = type[CLASS_CLASS_INDEX];
                 const metadata = type.metadata.find(m => m.name === name);
                 if (metadata)
@@ -7158,6 +7159,37 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     return r;
                 }
                 return null;
+            },
+        })],
+        [name($publicns, "metadata"), method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return [applytype(arrayclass, [objectclass]), new Map(), []];
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                const r1 = [];
+                for (const metadata of type.metadata)
+                {
+                    const r = construct(objectclass);
+                    setproperty(r, null, "name", metadata.name);
+                    const entrytuple_t = tupletype([stringclass, stringclass]);
+                    const r_entries = [];
+                    for (const [k, v] of metadata.entries)
+                    {
+                        r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
+                    }
+                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                    r1.push(r);
+                }
+                return [applytype(arrayclass, [objectclass]), new Map(), r1];
             },
         })],
         [name($publicns, "typeFullName"), method({
