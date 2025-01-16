@@ -7510,6 +7510,22 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return [tupletype(elementTypes), untoucheddynamic, ...elements];
             }
         })],
+        [name($publicns, "constructorOf"), method({
+            static: true,
+
+            exec(object)
+            {
+                if (object instanceof Array)
+                {
+                    const ctor = object[CONSTRUCTOR_INDEX];
+                    if (ctor instanceof ActionCoreType)
+                    {
+                        return reflectclass(ctor);
+                    }
+                }
+                return null;
+            }
+        })],
         [name($publicns, "isArrayType"), method({
             static: true,
 
