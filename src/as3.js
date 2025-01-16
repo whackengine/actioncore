@@ -7330,6 +7330,25 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return null;
             }
         })],
+        [name($publicns, "objectHasMethod"), method({
+            static: true,
+
+            exec(object, name)
+            {
+                let uri = null;
+                if (istype(name, qnameclass))
+                {
+                    uri = name[QNAME_URI_INDEX];
+                    name = name[QNAME_LOCALNAME_INDEX];
+                }
+                else
+                {
+                    name = tostring(name);
+                }
+                const q = uri === null ? null : userns(uri);
+                return hasmethod(object, q, name);
+            }
+        })],
         [name($publicns, "tupleTypeElements"), method({
             static: true,
 
