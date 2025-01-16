@@ -7330,7 +7330,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return null;
             }
         })],
-        [name($publicns, "objectHasMethod"), method({
+        [name($publicns, "hasMethod"), method({
             static: true,
 
             exec(object, name)
