@@ -7233,7 +7233,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return null;
+                    return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7247,7 +7247,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 const r = [];
                 for (const [name, trait] of type.prototypenames.dictionary())
                 {
-                    if ((name.ns instanceof Systemns && name.ns.kind != Systemns.PUBLIC) || name.ns instanceof Userns)
+                    if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
                     {
                         continue;
                     }
@@ -7282,6 +7282,52 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     }
                 }
                 return [applytype(arrayclass, [objectclass]), new Map(), r];
+            }
+        })],
+        [name($publicns, "propertyType"), method({
+            static: true,
+
+            exec(type, name)
+            {
+                if (type === null || type === undefined)
+                {
+                    return null;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                let uri = null;
+                if (istype(name, qnameclass))
+                {
+                    uri = name[QNAME_URI_INDEX];
+                    name = name[QNAME_LOCALNAME_INDEX];
+                }
+                else
+                {
+                    name = tostring(name);
+                }
+                type = type[CLASS_CLASS_INDEX];
+                if (!(type instanceof Class || type instanceof SpecialTypeAfterSub))
+                {
+                    return null;
+                }
+                for (const [name, trait] of type.prototypenames.dictionary())
+                {
+                    if (!(uri ? (name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) : (name.ns instanceof Userns && name.ns.uri === uri)))
+                    {
+                        continue;
+                    }
+                    if (name.name != name)
+                    {
+                        continue;
+                    }
+                    if (trait instanceof Variable || trait instanceof VirtualVariable)
+                    {
+                        return reflectclass(trait.type);
+                    }
+                }
+                return null;
             }
         })],
         [name($publicns, "tupleTypeElements"), method({
@@ -10439,7 +10485,7 @@ function describe_props(names)
     const r = [];
     for (const [name, trait] of names.dictionary())
     {
-        if ((name.ns instanceof Systemns && name.ns.kind != Systemns.PUBLIC) || name.ns instanceof Userns)
+        if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
         {
             continue;
         }
