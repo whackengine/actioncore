@@ -146,7 +146,7 @@ import {
     isvector,
     coerce,
     coerceorfail,
-    nameoftype,
+    typename,
     construct,
     tostring,
     reflectclass,

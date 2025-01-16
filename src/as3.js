@@ -362,9 +362,12 @@ export class ActionCoreType
     }
 }
 
-export function nameoftype(type)
+/**
+ * Returns the name of a type.
+ */
+export function typename(type)
 {
-    return type === null ? "*" : type.name;
+    return type === null || type === undefined ? "*" : type.name;
 }
 
 /**
@@ -705,7 +708,7 @@ export class SpecialTypeAfterSub extends ActionCoreType
 
     get name()
     {
-        return this.original.name + "." + "<" + this.argumentslist.map(a => nameoftype(a)).join(", ") + ">";
+        return this.original.name + "." + "<" + this.argumentslist.map(a => typename(a)).join(", ") + ">";
     }
 
     get localname()
@@ -858,7 +861,7 @@ export class TupleType extends ActionCoreType
 
     get localname()
     {
-        return "[" + this.elementtypes.map(t => nameoftype(t)).join(", ") + "]";
+        return "[" + this.elementtypes.map(t => typename(t)).join(", ") + "]";
     }
 
     get final()
@@ -1595,7 +1598,7 @@ export function setglobal(qual, name, value)
             throw new ReferenceError("Cannot assign to read-only property " + trait.name + ".");
         }
         globalvarvals.set(trait, coerceorfail(value, trait.type, () => {
-            throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + nameoftype(trait.type) + ".");
+            throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + typename(trait.type) + ".");
         }));
         return;
     }
@@ -1607,7 +1610,7 @@ export function setglobal(qual, name, value)
             throw new ReferenceError("Cannot assign to read-only property " + trait.name + ".");
         }
         setter.exec.apply(undefined, [coerceorfail(value, trait.type, () => {
-            throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + nameoftype(trait.type) + ".");
+            throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + typename(trait.type) + ".");
         })]);
         return;
     }
@@ -2987,10 +2990,10 @@ export function setproperty(base, qual, name, value)
                     throw new ReferenceError("Weak key must be a managed Object.");
                 }
                 name = coerceorfail(name, keyType, () => {
-                    throw new TypeError("Expected key type " + nameoftype(keyType));
+                    throw new TypeError("Expected key type " + typename(keyType));
                 });
                 value = coerceorfail(value, valueType, () => {
-                    throw new TypeError("Expected value type " + nameoftype(valueType));
+                    throw new TypeError("Expected value type " + typename(valueType));
                 });
                 mm.set(name, value);
                 return;
@@ -3000,7 +3003,7 @@ export function setproperty(base, qual, name, value)
             {
                 const [elemType] = ctor.argumentslist;
                 value = coerceorfail(value, elemType, () => {
-                    throw new TypeError("Expected value of type " + nameoftype(elemType));
+                    throw new TypeError("Expected value of type " + typename(elemType));
                 });
                 base[ARRAY_SUBARRAY_INDEX][name >> 0] = value;
                 return;
@@ -3023,7 +3026,7 @@ export function setproperty(base, qual, name, value)
                     return;
                 }
                 value = coerceorfail(value, elemType, () => {
-                    throw new TypeError("Expected value of type " + nameoftype(elemType));
+                    throw new TypeError("Expected value of type " + typename(elemType));
                 });
                 arr[i] = value;
                 return;
@@ -3060,7 +3063,7 @@ export function setproperty(base, qual, name, value)
                         throw new ReferenceError("Cannot assign to read-only property " + itrait.name + ".");
                     }
                     base[SLOT_FIXTURE_START + i] = coerceorfail(value, itrait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value to " + itrait.name + ": expected " + nameoftype(itrait.type) + ".");
+                        throw new TypeError("Cannot assign incompatible value to " + itrait.name + ": expected " + typename(itrait.type) + ".");
                     });
                     return;
                 }
@@ -3073,7 +3076,7 @@ export function setproperty(base, qual, name, value)
                         throw new ReferenceError("Cannot assign to read-only property " + itrait.name + ".");
                     }
                     setter.exec.call(base, coerceorfail(value, itrait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value to " + itrait.name + ": expected " + nameoftype(itrait.type) + ".");
+                        throw new TypeError("Cannot assign incompatible value to " + itrait.name + ": expected " + typename(itrait.type) + ".");
                     }));
                     return;
                 }
@@ -3142,7 +3145,7 @@ export function setproperty(base, qual, name, value)
                         throw new ReferenceError("Cannot assign to read-only property '" + trait.name + "'.");
                     }
                     c1.staticvarvals.set(trait, coerceorfail(value, trait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + nameoftype(trait.type) + ".");
+                        throw new TypeError("Cannot assign incompatible value to '" + trait.name + "': expected " + typename(trait.type) + ".");
                     }));
                     return;
                 }
@@ -3155,7 +3158,7 @@ export function setproperty(base, qual, name, value)
                         throw new ReferenceError("Cannot assign to read-only property " + trait.name + ".");
                     }
                     setter.exec.apply(undefined, [coerceorfail(value, trait.type, () => {
-                        throw new TypeError("Cannot assign incompatible value to " + trait.name + ": expected " + nameoftype(trait.type) + ".");
+                        throw new TypeError("Cannot assign incompatible value to " + trait.name + ": expected " + typename(trait.type) + ".");
                     })]);
                     return;
                 }
@@ -4565,7 +4568,7 @@ export function coerceorfail(value, type, failureCallback)
             return type === objectclass ? undefined : null;
         }
         failureCallback();
-        throw new TypeError("Implicit coercion to " + nameoftype(type) + " failed.");
+        throw new TypeError("Implicit coercion to " + typename(type) + " failed.");
     }
     if (numberclasses.indexOf(type) !== -1)
     {
@@ -7157,6 +7160,23 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return null;
             },
         })],
+        [name($publicns, "typeFullName"), method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return "*";
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                return type.name;
+            }
+        })],
         [name($publicns, "typeLocalName"), method({
             static: true,
 
@@ -7387,7 +7407,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 for (let i = 0; i < l; i++)
                 {
                     elements[i] = coerceorfail(elements[i], elementTypes[i], () => {
-                        throw new ArgumentError("Expected index " + i + " to be of type " + nameoftype(elementTypes[i]) + ".");
+                        throw new ArgumentError("Expected index " + i + " to be of type " + typename(elementTypes[i]) + ".");
                     });
                 }
                 return [tupletype(elementTypes), untoucheddynamic, ...elements];
@@ -7482,7 +7502,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 args = args.map(arg =>
                 {
                     return coerceorfail(arg, elemType, () => {
-                        throw new TypeError("Expected item of type " + nameoftype(elemType));
+                        throw new TypeError("Expected item of type " + typename(elemType));
                     });
                 });
                 this[ARRAY_SUBARRAY_INDEX] = args.slice(0);
@@ -7523,14 +7543,14 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                         for (const arg1 of arg[ARRAY_SUBARRAY_INDEX])
                         {
                             r.push(coerceorfail(arg1, elemType, () => {
-                                throw new TypeError("Expected item of type " + nameoftype(elemType));
+                                throw new TypeError("Expected item of type " + typename(elemType));
                             }));
                         }
                     }
                     else
                     {
                         r.push(coerceorfail(arg, elemType, () => {
-                            throw new TypeError("Expected item of type " + nameoftype(elemType));
+                            throw new TypeError("Expected item of type " + typename(elemType));
                         }));
                     }
                 }
@@ -7605,7 +7625,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
                 return arr.indexOf(coerceorfail(searchElement, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }), fromIndex);
             },
         })],
@@ -7617,7 +7637,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
                 element = coerceorfail(element, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 });
                 arr.splice(index, 0, element);
             },
@@ -7638,7 +7658,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
                 searchElement = coerceorfail(searchElement, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 });
                 return arr.lastIndexOf(searchElement, fromIndex);
             },
@@ -7679,7 +7699,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
                 args = args.map(arg => coerceorfail(arg, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 return arr.push(...args);
             },
@@ -7930,7 +7950,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
             {
                 const arr = this[ARRAY_SUBARRAY_INDEX];
                 items = items.map(item => coerceorfail(item, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
                 return [this[CONSTRUCTOR_INDEX], new Map(), r];
@@ -7944,7 +7964,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[ARRAY_SUBARRAY_INDEX];
                 args = args.map(arg => coerceorfail(arg, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 return arr.unshift(...args);
             },
@@ -8148,14 +8168,14 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                         for (const arg1 of arg[VECTOR_SUBARRAY_INDEX])
                         {
                             r.push(coerceorfail(arg1, elemType, () => {
-                                throw new TypeError("Expected item of type " + nameoftype(elemType));
+                                throw new TypeError("Expected item of type " + typename(elemType));
                             }));
                         }
                     }
                     else
                     {
                         r.push(coerceorfail(arg, elemType, () => {
-                            throw new TypeError("Expected item of type " + nameoftype(elemType));
+                            throw new TypeError("Expected item of type " + typename(elemType));
                         }));
                     }
                 }
@@ -8229,7 +8249,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 searchElement = coerceorfail(searchElement, elemType, () => {
-                    throw new TypeError("Expected search element of type " + nameoftype(elemType));
+                    throw new TypeError("Expected search element of type " + typename(elemType));
                 });
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 return arr.indexOf(searchElement, fromIndex);
@@ -8246,7 +8266,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 element = coerceorfail(element, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 });
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 arr.splice(index, 0, element);
@@ -8267,7 +8287,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const ctor = this[CONSTRUCTOR_INDEX];
                 const [elemType] = ctor.argumentslist;
                 searchElement = coerceorfail(searchElement, elemType, () => {
-                    throw new TypeError("Expected search element of type " + nameoftype(elemType));
+                    throw new TypeError("Expected search element of type " + typename(elemType));
                 });
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 return arr.lastIndexOf(searchElement, fromIndex);
@@ -8313,7 +8333,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 args = args.map(arg => coerceorfail(arg, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 arr.push(...args);
                 return arr.length;
@@ -8549,7 +8569,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 items = items.map(item => coerceorfail(item, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
                 return [this[CONSTRUCTOR_INDEX], new Map(), r, false];
@@ -8567,7 +8587,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 const [elemType] = ctor.argumentslist;
                 const arr = this[VECTOR_SUBARRAY_INDEX];
                 args = args.map(arg => coerceorfail(arg, elemType, () => {
-                    throw new TypeError("Expected item of type " + nameoftype(elemType));
+                    throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 return arr.unshift(...args);
             },
