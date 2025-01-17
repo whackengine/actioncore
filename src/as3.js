@@ -4629,7 +4629,7 @@ export function construct(classobj, ...args)
     {
         throw new TypeError("Constructor is a parameterized type and requires type arguments.");
     }
-    const instance = [classobj, new Map()];
+    const instance = [classobj, classobj.dynamic ? new Map() : untoucheddynamic];
     classobj.ctor.apply(instance, args);
     return instance;
 }
@@ -5071,7 +5071,7 @@ export const stringclass = defineclass(name($publicns, "String"),
                 {
                     return null;
                 }
-                const r = [applytype(arrayclass, [null]), new Map(), r1];
+                const r = [applytype(arrayclass, [null]), untoucheddynamic, r1];
                 setdynamicproperty(r, "index", r1.index);
                 setdynamicproperty(r, "input", r1.input);
                 return r;
@@ -5141,7 +5141,7 @@ export const stringclass = defineclass(name($publicns, "String"),
                 }
                 limit = limit ?? 0x7FFFFFFF;
                 const r1 = (this[STRING_VALUE_INDEX]).split(delimiter, limit);
-                return [applytype(arrayclass, [stringclass]), new Map(), r1];
+                return [applytype(arrayclass, [stringclass]), untoucheddynamic, r1];
             },
         })],
         [name(as3ns, "startsWith"), method(
@@ -7133,7 +7133,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (type instanceof SpecialTypeAfterSub)
                 {
-                    return [applytype(arrayclass, [classclass]), new Map(), type.argumentslist.map(arg => reflectclass(arg))];
+                    return [applytype(arrayclass, [classclass]), untoucheddynamic, type.argumentslist.map(arg => reflectclass(arg))];
                 }
                 return null;
             },
@@ -7164,7 +7164,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     {
                         r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
                     }
-                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), untoucheddynamic, r_entries]);
                     return r;
                 }
                 return null;
@@ -7177,7 +7177,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return [applytype(arrayclass, [objectclass]), new Map(), []];
+                    return [applytype(arrayclass, [objectclass]), untoucheddynamic, []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7195,10 +7195,10 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     {
                         r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
                     }
-                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), untoucheddynamic, r_entries]);
                     r1.push(r);
                 }
-                return [applytype(arrayclass, [objectclass]), new Map(), r1];
+                return [applytype(arrayclass, [objectclass]), untoucheddynamic, r1];
             },
         })],
         [name($publicns, "typeFullName"), method({
@@ -7242,7 +7242,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return [applytype(arrayclass, [objectclass]), new Map(), []];
+                    return [applytype(arrayclass, [objectclass]), untoucheddynamic, []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7251,7 +7251,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (!(type instanceof Class))
                 {
-                    return [applytype(arrayclass, [objectclass]), new Map(), []];
+                    return [applytype(arrayclass, [objectclass]), untoucheddynamic, []];
                 }
                 const r = [];
                 for (const [name, trait] of type.prototypenames.dictionary())
@@ -7277,10 +7277,10 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                             {
                                 r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
                             }
-                            setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                            setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), untoucheddynamic, r_entries]);
                             r_metadata.push(r);
                         }
-                        const r_metadata_array = [applytype(arrayclass, [objectclass]), new Map(), r_metadata];
+                        const r_metadata_array = [applytype(arrayclass, [objectclass]), untoucheddynamic, r_metadata];
 
                         const r1 = construct(objectclass);
                         setproperty(r1, null, "metadata", r_metadata_array);
@@ -7290,7 +7290,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                         r.push(r1);
                     }
                 }
-                return [applytype(arrayclass, [objectclass]), new Map(), r];
+                return [applytype(arrayclass, [objectclass]), untoucheddynamic, r];
             }
         })],
         [name($publicns, "propertyType"), method({
@@ -7374,7 +7374,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (type instanceof TupleType)
                 {
-                    return [applytype(arrayclass, [classclass]), new Map(), type.elementtypes.map(t => reflectclass(t))];
+                    return [applytype(arrayclass, [classclass]), untoucheddynamic, type.elementtypes.map(t => reflectclass(t))];
                 }
                 return null;
             },
@@ -7407,7 +7407,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return [applytype(arrayclass, [classclass]), new Map(), []];
+                    return [applytype(arrayclass, [classclass]), untoucheddynamic, []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7416,9 +7416,9 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (type instanceof Class)
                 {
-                    return [applytype(arrayclass, [classclass]), new Map(), type.limitedknownsubclasses.map(c => reflectclass(c))];
+                    return [applytype(arrayclass, [classclass]), untoucheddynamic, type.limitedknownsubclasses.map(c => reflectclass(c))];
                 }
-                return [applytype(arrayclass, [classclass]), new Map(), []];
+                return [applytype(arrayclass, [classclass]), untoucheddynamic, []];
             }
         })],
         [name($publicns, "arrayOf"), method({
@@ -7609,7 +7609,6 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
 export const ARRAY_SUBARRAY_INDEX = 2;
 export const arrayclass = defineclass(name($publicns, "Array"),
     {
-        dynamic: true,
         final: true,
 
         ctor(...args)
@@ -7676,7 +7675,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                         }));
                     }
                 }
-                return [this[CONSTRUCTOR_INDEX], new Map(), r];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
             },
         })],
         [name(as3ns, "every"), method(
@@ -7714,7 +7713,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                         r.push(item);
                     }
                 }
-                return [this[CONSTRUCTOR_INDEX], new Map(), r];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
             },
         })],
         [name(as3ns, "forEach"), method(
@@ -7798,7 +7797,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 {
                     r.push(callbackFn(arr[i], i, this));
                 }
-                return [applytype(arrayclass, [null]), new Map(), r];
+                return [applytype(arrayclass, [null]), untoucheddynamic, r];
             },
         })],
         [name(as3ns, "pop"), method(
@@ -7860,7 +7859,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
             exec(startIndex = 0, endIndex = 0x7FFFFFFF)
             {
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex)];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex)];
             },
         })],
         [name(as3ns, "some"), method(
@@ -7964,7 +7963,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), new Map(), indices];
+                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
                 }
                 else
                 {
@@ -8057,7 +8056,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), new Map(), indices];
+                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
                 }
                 else
                 {
@@ -8075,7 +8074,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                     throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
-                return [this[CONSTRUCTOR_INDEX], new Map(), r];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
             },
         })],
         [name(as3ns, "unshift"), method(
@@ -8301,7 +8300,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                         }));
                     }
                 }
-                return [this[CONSTRUCTOR_INDEX], new Map(), r];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
             },
         })],
         [name(as3ns, "every"), method(
@@ -8339,7 +8338,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                         r.push(item);
                     }
                 }
-                return [this[CONSTRUCTOR_INDEX], new Map(), r];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
             },
         })],
         [name(as3ns, "forEach"), method(
@@ -8428,7 +8427,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                 {
                     r.push(callbackFn(arr[i], i, this));
                 }
-                return [applytype(vectorclass, [null]), new Map(), r];
+                return [applytype(vectorclass, [null]), untoucheddynamic, r];
             },
         })],
         [name(as3ns, "pop"), method(
@@ -8503,7 +8502,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
             exec(startIndex = 0, endIndex = 0x7FFFFFFF)
             {
                 const arr = this[VECTOR_SUBARRAY_INDEX];
-                return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex), false];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex), false];
             },
         })],
         [name(as3ns, "some"), method(
@@ -8577,7 +8576,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), new Map(), indices];
+                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
                 }
                 else
                 {
@@ -8670,7 +8669,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), new Map(), indices];
+                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
                 }
                 else
                 {
@@ -8694,7 +8693,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                     throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
-                return [this[CONSTRUCTOR_INDEX], new Map(), r, false];
+                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r, false];
             },
         })],
         [name(as3ns, "unshift"), method(
@@ -8830,7 +8829,7 @@ vectordoubleclass.specialisedprototypenames = new Names([
         exec(...args)
         {
             const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), new Map(), Array.from(r[Symbol.iterator]()), false];
+            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
         }
     })],
     [name(as3ns, "pop"), method(
@@ -8896,7 +8895,7 @@ vectordoubleclass.specialisedprototypenames = new Names([
         exec(startIndex = 0, endIndex = 0x7FFFFFFF)
         {
             const arr = this[VECTOR_SUBARRAY_INDEX];
-            return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex)];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex)];
         },
     })],
     [name(as3ns, "some"), method(
@@ -8925,7 +8924,7 @@ vectordoubleclass.specialisedprototypenames = new Names([
             }
             const arr = this[VECTOR_SUBARRAY_INDEX];
             const r = arr.splice(startIndex, deleteCount, ...items);
-            return [this[CONSTRUCTOR_INDEX], new Map(), r];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
         },
     })],
     [name(as3ns, "unshift"), method(
@@ -8960,7 +8959,7 @@ function Vectornumber_concat(...args)
             r.push(Number(arg));
         }
     }
-    return [this[CONSTRUCTOR_INDEX], new Map(), r];
+    return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
 }
 
 function Vectornumber_every(callback, thisObject = null)
@@ -9087,7 +9086,7 @@ function Vectornumber_sort(...args)
                 }
             }
         }
-        return [applytype(arrayclass, [null]), new Map(), indices];
+        return [applytype(arrayclass, [null]), untoucheddynamic, indices];
     }
     else
     {
@@ -9177,7 +9176,7 @@ function Vectornumber_sortOn(fieldName, sortOptions = null)
                 }
             }
         }
-        return [applytype(arrayclass, [null]), new Map(), indices];
+        return [applytype(arrayclass, [null]), untoucheddynamic, indices];
     }
     else
     {
@@ -9299,7 +9298,7 @@ vectorfloatclass.specialisedprototypenames = new Names([
         exec(...args)
         {
             const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), new Map(), Array.from(r[Symbol.iterator]()), false];
+            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
         }
     })],
     [name(as3ns, "pop"), method(
@@ -9365,7 +9364,7 @@ vectorfloatclass.specialisedprototypenames = new Names([
         exec(startIndex = 0, endIndex = 0x7FFFFFFF)
         {
             const arr = this[VECTOR_SUBARRAY_INDEX];
-            return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex)];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex)];
         },
     })],
     [name(as3ns, "some"), method(
@@ -9394,7 +9393,7 @@ vectorfloatclass.specialisedprototypenames = new Names([
             }
             const arr = this[VECTOR_SUBARRAY_INDEX];
             const r = arr.splice(startIndex, deleteCount, ...items);
-            return [this[CONSTRUCTOR_INDEX], new Map(), r];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
         },
     })],
     [name(as3ns, "unshift"), method(
@@ -9524,7 +9523,7 @@ vectorintclass.specialisedprototypenames = new Names([
         exec(...args)
         {
             const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), new Map(), Array.from(r[Symbol.iterator]()), false];
+            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
         }
     })],
     [name(as3ns, "pop"), method(
@@ -9590,7 +9589,7 @@ vectorintclass.specialisedprototypenames = new Names([
         exec(startIndex = 0, endIndex = 0x7FFFFFFF)
         {
             const arr = this[VECTOR_SUBARRAY_INDEX];
-            return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex)];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex)];
         },
     })],
     [name(as3ns, "some"), method(
@@ -9619,7 +9618,7 @@ vectorintclass.specialisedprototypenames = new Names([
             }
             const arr = this[VECTOR_SUBARRAY_INDEX];
             const r = arr.splice(startIndex, deleteCount, ...items);
-            return [this[CONSTRUCTOR_INDEX], new Map(), r];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
         },
     })],
     [name(as3ns, "unshift"), method(
@@ -9749,7 +9748,7 @@ vectoruintclass.specialisedprototypenames = new Names([
         exec(...args)
         {
             const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), new Map(), Array.from(r[Symbol.iterator]()), false];
+            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
         }
     })],
     [name(as3ns, "pop"), method(
@@ -9815,7 +9814,7 @@ vectoruintclass.specialisedprototypenames = new Names([
         exec(startIndex = 0, endIndex = 0x7FFFFFFF)
         {
             const arr = this[VECTOR_SUBARRAY_INDEX];
-            return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex)];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex)];
         },
     })],
     [name(as3ns, "some"), method(
@@ -9844,7 +9843,7 @@ vectoruintclass.specialisedprototypenames = new Names([
             }
             const arr = this[VECTOR_SUBARRAY_INDEX];
             const r = arr.splice(startIndex, deleteCount, ...items);
-            return [this[CONSTRUCTOR_INDEX], new Map(), r];
+            return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
         },
     })],
     [name(as3ns, "unshift"), method(
@@ -9888,7 +9887,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
                 list = (list[ARRAY_SUBARRAY_INDEX]).map(p => call(promiseclass, p)[PROMISE_PROMISE_INDEX]);
                 return [promiseclass, new Map(), Promise.all(list).then(vals =>
                 {
-                    return [applytype(arrayclass, [null]), new Map(), vals];
+                    return [applytype(arrayclass, [null]), untoucheddynamic, vals];
                 })];
             },
         })],
@@ -9906,7 +9905,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
                 return [promiseclass, new Map(), Promise.allSettled(list).then(vals =>
                 {
                     const r_arr = [];
-                    const r = [applytype(arrayclass, [objectclass]), new Map(), r_arr];
+                    const r = [applytype(arrayclass, [objectclass]), untoucheddynamic, r_arr];
                     for (const obj of vals)
                     {
                         if (obj.status == "fulfilled")
@@ -9942,7 +9941,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
                 return [promiseclass, new Map(), Promise.any(list).catch(reason => {
                     if (reason instanceof AggregateError)
                     {
-                        reason = construct(aggregateerrorclass, [applytype(arrayclass, [null]), new Map(), reason.errors.slice(0)]);
+                        reason = construct(aggregateerrorclass, [applytype(arrayclass, [null]), untoucheddynamic, reason.errors.slice(0)]);
                     }
                     return reason;
                 })];
@@ -10102,7 +10101,7 @@ export const regexpclass = defineclass(name($publicns, "RegExp"),
                 {
                     return null;
                 }
-                const r = [applytype(arrayclass, [null]), new Map(), r1];
+                const r = [applytype(arrayclass, [null]), untoucheddynamic, r1];
                 setdynamicproperty(r, "index", r1.index);
                 setdynamicproperty(r, "input", r1.input);
                 return r;
@@ -10443,7 +10442,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                     throw new ReferenceError("Cannot enumerate entries of a weak Map.");
                 }
                 const list = Array.from(m.entries()).map(entry => [tupletype([keyType, valueType]), untoucheddynamic, entry]);
-                return [applytype(arrayclass, [tupletype([keyType, valueType])]), new Map(), list];
+                return [applytype(arrayclass, [tupletype([keyType, valueType])]), untoucheddynamic, list];
             },
         })],
         [name($publicns, "keys"), method(
@@ -10457,7 +10456,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                 {
                     throw new ReferenceError("Cannot enumerate keys of a weak Map.");
                 }
-                return [applytype(arrayclass, [keyType]), new Map(), Array.from(m.keys())];
+                return [applytype(arrayclass, [keyType]), untoucheddynamic, Array.from(m.keys())];
             },
         })],
         [name($publicns, "values"), method(
@@ -10471,7 +10470,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                 {
                     throw new ReferenceError("Cannot enumerate values of a weak Map.");
                 }
-                return [applytype(arrayclass, [valueType]), new Map(), Array.from(m.values())];
+                return [applytype(arrayclass, [valueType]), untoucheddynamic, Array.from(m.values())];
             },
         })],
         [name($publicns, "clear"), method(
@@ -11067,24 +11066,38 @@ function clone_impl(obj)
     if (ctor instanceof Class)
     {
         const r = construct(ctor());
-        
-        for (const [name, trait] of ctor.prototypenames.dictionary())
-        {
-            if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
-            {
-                continue;
-            }
 
-            if ((trait instanceof Variable && !trait.readonly) || (trait instanceof VirtualVariable && trait.getter !== null && trait.setter !== null))
+        while (ctor !== null)
+        {
+            for (const [name, trait] of ctor.prototypenames.dictionary())
             {
-                const val = getproperty(obj, name.ns, name.name);
-                if (val !== null && val !== undefined && hasmethod(val, null, "clone"))
+                if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
                 {
-                    val = callproperty(val, null, "clone");
+                    continue;
                 }
-                setproperty(r, name.ns, name.name, val);
+
+                if ((trait instanceof Variable && !trait.readonly) || (trait instanceof VirtualVariable && trait.getter !== null && trait.setter !== null))
+                {
+                    const val = getproperty(obj, name.ns, name.name);
+                    if (val !== null && val !== undefined && hasmethod(val, null, "clone"))
+                    {
+                        val = callproperty(val, null, "clone");
+                    }
+                    setproperty(r, name.ns, name.name, val);
+                }
             }
+            ctor = ctor.baseclass;
         }
+
+        for (const [k, v] in obj[DYNAMIC_PROPERTIES_INDEX].entries())
+        {
+            if (v !== null && v !== undefined && hasmethod(v, null, "clone"))
+            {
+                v = callproperty(v, null, "clone");
+            }
+            setproperty(r, null, k, v);
+        }
+
         return r;
     }
     if (istypeinstantiatedfrom(ctor, arrayclass) || istypeinstantiatedfrom(ctor, vectorclass))
