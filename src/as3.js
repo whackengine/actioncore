@@ -5071,7 +5071,7 @@ export const stringclass = defineclass(name($publicns, "String"),
                 {
                     return null;
                 }
-                const r = [applytype(arrayclass, [null]), untoucheddynamic, r1];
+                const r = [applytype(arrayclass, [null]), new Map(), r1];
                 setdynamicproperty(r, "index", r1.index);
                 setdynamicproperty(r, "input", r1.input);
                 return r;
@@ -5141,7 +5141,7 @@ export const stringclass = defineclass(name($publicns, "String"),
                 }
                 limit = limit ?? 0x7FFFFFFF;
                 const r1 = (this[STRING_VALUE_INDEX]).split(delimiter, limit);
-                return [applytype(arrayclass, [stringclass]), untoucheddynamic, r1];
+                return [applytype(arrayclass, [stringclass]), new Map(), r1];
             },
         })],
         [name(as3ns, "startsWith"), method(
@@ -7133,7 +7133,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (type instanceof SpecialTypeAfterSub)
                 {
-                    return [applytype(arrayclass, [classclass]), untoucheddynamic, type.argumentslist.map(arg => reflectclass(arg))];
+                    return [applytype(arrayclass, [classclass]), new Map(), type.argumentslist.map(arg => reflectclass(arg))];
                 }
                 return null;
             },
@@ -7164,7 +7164,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     {
                         r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
                     }
-                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), untoucheddynamic, r_entries]);
+                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
                     return r;
                 }
                 return null;
@@ -7177,7 +7177,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return [applytype(arrayclass, [objectclass]), untoucheddynamic, []];
+                    return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7195,10 +7195,10 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                     {
                         r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
                     }
-                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), untoucheddynamic, r_entries]);
+                    setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
                     r1.push(r);
                 }
-                return [applytype(arrayclass, [objectclass]), untoucheddynamic, r1];
+                return [applytype(arrayclass, [objectclass]), new Map(), r1];
             },
         })],
         [name($publicns, "typeFullName"), method({
@@ -7242,7 +7242,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return [applytype(arrayclass, [objectclass]), untoucheddynamic, []];
+                    return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7251,7 +7251,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (!(type instanceof Class))
                 {
-                    return [applytype(arrayclass, [objectclass]), untoucheddynamic, []];
+                    return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
                 const r = [];
                 for (const [name, trait] of type.prototypenames.dictionary())
@@ -7277,10 +7277,10 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                             {
                                 r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
                             }
-                            setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), untoucheddynamic, r_entries]);
+                            setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
                             r_metadata.push(r);
                         }
-                        const r_metadata_array = [applytype(arrayclass, [objectclass]), untoucheddynamic, r_metadata];
+                        const r_metadata_array = [applytype(arrayclass, [objectclass]), new Map(), r_metadata];
 
                         const r1 = construct(objectclass);
                         setproperty(r1, null, "metadata", r_metadata_array);
@@ -7290,7 +7290,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                         r.push(r1);
                     }
                 }
-                return [applytype(arrayclass, [objectclass]), untoucheddynamic, r];
+                return [applytype(arrayclass, [objectclass]), new Map(), r];
             }
         })],
         [name($publicns, "propertyType"), method({
@@ -7374,7 +7374,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (type instanceof TupleType)
                 {
-                    return [applytype(arrayclass, [classclass]), untoucheddynamic, type.elementtypes.map(t => reflectclass(t))];
+                    return [applytype(arrayclass, [classclass]), new Map(), type.elementtypes.map(t => reflectclass(t))];
                 }
                 return null;
             },
@@ -7407,7 +7407,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
             {
                 if (type === null || type === undefined)
                 {
-                    return [applytype(arrayclass, [classclass]), untoucheddynamic, []];
+                    return [applytype(arrayclass, [classclass]), new Map(), []];
                 }
                 if (!istype(type, classclass))
                 {
@@ -7416,9 +7416,9 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 type = type[CLASS_CLASS_INDEX];
                 if (type instanceof Class)
                 {
-                    return [applytype(arrayclass, [classclass]), untoucheddynamic, type.limitedknownsubclasses.map(c => reflectclass(c))];
+                    return [applytype(arrayclass, [classclass]), new Map(), type.limitedknownsubclasses.map(c => reflectclass(c))];
                 }
-                return [applytype(arrayclass, [classclass]), untoucheddynamic, []];
+                return [applytype(arrayclass, [classclass]), new Map(), []];
             }
         })],
         [name($publicns, "arrayOf"), method({
@@ -7609,6 +7609,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
 export const ARRAY_SUBARRAY_INDEX = 2;
 export const arrayclass = defineclass(name($publicns, "Array"),
     {
+        dynamic: true,
         final: true,
 
         ctor(...args)
@@ -7675,7 +7676,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                         }));
                     }
                 }
-                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
+                return [this[CONSTRUCTOR_INDEX], new Map(), r];
             },
         })],
         [name(as3ns, "every"), method(
@@ -7713,7 +7714,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                         r.push(item);
                     }
                 }
-                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
+                return [this[CONSTRUCTOR_INDEX], new Map(), r];
             },
         })],
         [name(as3ns, "forEach"), method(
@@ -7797,7 +7798,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                 {
                     r.push(callbackFn(arr[i], i, this));
                 }
-                return [applytype(arrayclass, [null]), untoucheddynamic, r];
+                return [applytype(arrayclass, [null]), new Map(), r];
             },
         })],
         [name(as3ns, "pop"), method(
@@ -7859,7 +7860,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
             exec(startIndex = 0, endIndex = 0x7FFFFFFF)
             {
                 const arr = this[ARRAY_SUBARRAY_INDEX];
-                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, arr.slice(startIndex, endIndex)];
+                return [this[CONSTRUCTOR_INDEX], new Map(), arr.slice(startIndex, endIndex)];
             },
         })],
         [name(as3ns, "some"), method(
@@ -7963,7 +7964,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
+                    return [applytype(arrayclass, [null]), new Map(), indices];
                 }
                 else
                 {
@@ -8056,7 +8057,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
+                    return [applytype(arrayclass, [null]), new Map(), indices];
                 }
                 else
                 {
@@ -8074,7 +8075,7 @@ export const arrayclass = defineclass(name($publicns, "Array"),
                     throw new TypeError("Expected item of type " + typename(elemType));
                 }));
                 const r = arr.splice(startIndex, deleteCount, ...items);
-                return [this[CONSTRUCTOR_INDEX], untoucheddynamic, r];
+                return [this[CONSTRUCTOR_INDEX], new Map(), r];
             },
         })],
         [name(as3ns, "unshift"), method(
@@ -8576,7 +8577,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
+                    return [applytype(arrayclass, [null]), new Map(), indices];
                 }
                 else
                 {
@@ -8669,7 +8670,7 @@ export const vectorclass = defineclass(name($publicns, "Vector"),
                             }
                         }
                     }
-                    return [applytype(arrayclass, [null]), untoucheddynamic, indices];
+                    return [applytype(arrayclass, [null]), new Map(), indices];
                 }
                 else
                 {
@@ -9086,7 +9087,7 @@ function Vectornumber_sort(...args)
                 }
             }
         }
-        return [applytype(arrayclass, [null]), untoucheddynamic, indices];
+        return [applytype(arrayclass, [null]), new Map(), indices];
     }
     else
     {
@@ -9176,7 +9177,7 @@ function Vectornumber_sortOn(fieldName, sortOptions = null)
                 }
             }
         }
-        return [applytype(arrayclass, [null]), untoucheddynamic, indices];
+        return [applytype(arrayclass, [null]), new Map(), indices];
     }
     else
     {
@@ -9887,7 +9888,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
                 list = (list[ARRAY_SUBARRAY_INDEX]).map(p => call(promiseclass, p)[PROMISE_PROMISE_INDEX]);
                 return [promiseclass, new Map(), Promise.all(list).then(vals =>
                 {
-                    return [applytype(arrayclass, [null]), untoucheddynamic, vals];
+                    return [applytype(arrayclass, [null]), new Map(), vals];
                 })];
             },
         })],
@@ -9905,7 +9906,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
                 return [promiseclass, new Map(), Promise.allSettled(list).then(vals =>
                 {
                     const r_arr = [];
-                    const r = [applytype(arrayclass, [objectclass]), untoucheddynamic, r_arr];
+                    const r = [applytype(arrayclass, [objectclass]), new Map(), r_arr];
                     for (const obj of vals)
                     {
                         if (obj.status == "fulfilled")
@@ -9941,7 +9942,7 @@ export const promiseclass = defineclass(name($publicns, "Promise"),
                 return [promiseclass, new Map(), Promise.any(list).catch(reason => {
                     if (reason instanceof AggregateError)
                     {
-                        reason = construct(aggregateerrorclass, [applytype(arrayclass, [null]), untoucheddynamic, reason.errors.slice(0)]);
+                        reason = construct(aggregateerrorclass, [applytype(arrayclass, [null]), new Map(), reason.errors.slice(0)]);
                     }
                     return reason;
                 })];
@@ -10101,7 +10102,7 @@ export const regexpclass = defineclass(name($publicns, "RegExp"),
                 {
                     return null;
                 }
-                const r = [applytype(arrayclass, [null]), untoucheddynamic, r1];
+                const r = [applytype(arrayclass, [null]), new Map(), r1];
                 setdynamicproperty(r, "index", r1.index);
                 setdynamicproperty(r, "input", r1.input);
                 return r;
@@ -10442,7 +10443,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                     throw new ReferenceError("Cannot enumerate entries of a weak Map.");
                 }
                 const list = Array.from(m.entries()).map(entry => [tupletype([keyType, valueType]), untoucheddynamic, entry]);
-                return [applytype(arrayclass, [tupletype([keyType, valueType])]), untoucheddynamic, list];
+                return [applytype(arrayclass, [tupletype([keyType, valueType])]), new Map(), list];
             },
         })],
         [name($publicns, "keys"), method(
@@ -10456,7 +10457,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                 {
                     throw new ReferenceError("Cannot enumerate keys of a weak Map.");
                 }
-                return [applytype(arrayclass, [keyType]), untoucheddynamic, Array.from(m.keys())];
+                return [applytype(arrayclass, [keyType]), new Map(), Array.from(m.keys())];
             },
         })],
         [name($publicns, "values"), method(
@@ -10470,7 +10471,7 @@ export const mapclass = defineclass(name($publicns, "Map"),
                 {
                     throw new ReferenceError("Cannot enumerate values of a weak Map.");
                 }
-                return [applytype(arrayclass, [valueType]), untoucheddynamic, Array.from(m.values())];
+                return [applytype(arrayclass, [valueType]), new Map(), Array.from(m.values())];
             },
         })],
         [name($publicns, "clear"), method(
