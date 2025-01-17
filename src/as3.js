@@ -4746,12 +4746,12 @@ export const as3ns = userns("http://whack.net/AS3/2024/builtin");
 export const whackproxyns = userns("http://whack.net/2024/actionscript/whack/proxy");
 
 /**
- * The `jsbridge_from` namespace.
+ * The `JSBridge.from` namespace.
  */
 export const jsbridgefromns = userns("http://whack.net/js/bridge/from");
 
 /**
- * The `jsbridge_to` namespace.
+ * The `JSBridge.to` namespace.
  */
 export const jsbridgetons = userns("http://whack.net/js/bridge/to");
 
