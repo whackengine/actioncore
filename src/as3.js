@@ -7519,7 +7519,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return [tupletype(elementTypes), untoucheddynamic, ...elements];
             }
         })],
-        [name($publicns, "constructorOf"), method({
+        [name($publicns, "getConstructor"), method({
             static: true,
 
             exec(object)
