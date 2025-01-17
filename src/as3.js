@@ -4814,7 +4814,16 @@ export const objectclass = defineclass(name($publicns, "Object"),
     {
         dynamic: true,
     },
-    []
+    [
+        [name($publicns, "clone"), method(
+        {
+            static: true,
+            exec(val)
+            {
+                return hasmethod(val, null, "clone") ? callproperty(val, null, "clone") : clone_impl(val);
+            },
+        })],
+    ]
 );
 
 export const NUMBER_VALUE_INDEX = 2;
@@ -11045,6 +11054,80 @@ setglobal($publicns, "NaN", NaN);
 setglobal($publicns, "Infinity", Infinity);
 
 // Prototype: set properties
+
+setdynamicproperty(objectclass.ecmaprototype, "clone", [functionclass, new Map(), clone_impl]);
+
+function clone_impl(obj)
+{
+    if (!(ctor instanceof Array))
+    {
+        return obj;
+    }
+    const ctor = obj[CONSTRUCTOR_INDEX];
+    if (ctor instanceof Class)
+    {
+        const r = construct(ctor());
+        
+        for (const [name, trait] of ctor.prototypenames.dictionary())
+        {
+            if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
+            {
+                continue;
+            }
+
+            if ((trait instanceof Variable && !trait.readonly) || (trait instanceof VirtualVariable && trait.getter !== null && trait.setter !== null))
+            {
+                const val = getproperty(obj, name.ns, name.name);
+                if (val !== null && val !== undefined && hasmethod(val, null, "clone"))
+                {
+                    val = callproperty(val, null, "clone");
+                }
+                setproperty(r, name.ns, name.name, val);
+            }
+        }
+        return r;
+    }
+    if (istypeinstantiatedfrom(ctor, arrayclass) || istypeinstantiatedfrom(ctor, vectorclass))
+    {
+        const r = construct(ctor);
+        if (istypeinstantiatedfrom(ctor, vectorclass))
+        {
+            setproperty(r, null, "fixed", getproperty(obj, null, "fixed"));
+        }
+        for (const el of valueiterator(obj))
+        {
+            if (el !== null && el !== undefined && hasmethod(el, null, "clone"))
+            {
+                el = callproperty(el, null, "clone");
+            }
+            callproperty(r, null, "push", el);
+        }
+        return r;
+    }
+    if (istypeinstantiatedfrom(ctor, mapclass))
+    {
+        const m = obj[MAP_PROPERTIES_INDEX];
+        if (m instanceof WeakMap)
+        {
+            return obj;
+        }
+        const r = construct(ctor);
+        for (const [k, v] of m.entries())
+        {
+            if (k !== null && k !== undefined && hasmethod(k, null, "clone"))
+            {
+                k = callproperty(k, null, "clone");
+            }
+            if (v !== null && v !== undefined && hasmethod(v, null, "clone"))
+            {
+                v = callproperty(v, null, "clone");
+            }
+            setproperty(r, null, k, v);
+        }
+        return r;
+    }
+    return obj;
+}
 
 setdynamicproperty(objectclass.ecmaprototype, "hasOwnProperty", [functionclass, new Map(), function(name)
     {
