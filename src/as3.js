@@ -1826,6 +1826,10 @@ export function nameiterator(obj)
             }
             return m.keys();
         }
+        if (ctor instanceof TupleType)
+        {
+            return iteratetupleindices(ctor);
+        }
         if (istype(obj, proxyclass))
         {
             return nameiterator_assumeProxy(obj);
@@ -1887,6 +1891,10 @@ export function valueiterator(obj)
             }
             return obj[MAP_PROPERTIES_INDEX].values();
         }
+        if (ctor instanceof TupleType)
+        {
+            return iteratetuplevalues(obj, ctor);
+        }
         if (istype(obj, proxyclass))
         {
             return valueiterator_assumeProxy(obj);
@@ -1917,6 +1925,24 @@ export function valueiterator(obj)
         return [][Symbol.iterator]();
     }
     return new TypeError("Value is not iterable.");
+}
+
+function *iteratetupleindices(tupletype)
+{
+    const l = tupletype.elementtypes.length;
+    for (let i = 0; i < l; i++)
+    {
+        yield i;
+    }
+}
+
+function *iteratetuplevalues(obj, tupletype)
+{
+    const l = tupletype.elementtypes.length;
+    for (let i = 0; i < l; i++)
+    {
+        yield obj[2 + i];
+    }
 }
 
 function *es3nameiterator(obj)
@@ -2722,13 +2748,20 @@ export function getproperty(base, qual, name)
             }
             if (ctor instanceof TupleType)
             {
-                const l = ctor.elementtypes.length;
-                let i = name >> 0;
-                if (i < 0 || i >= l)
+                if (!isNaN(Number(name)) && Number(name) == name >> 0)
                 {
-                    throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
+                    const l = ctor.elementtypes.length;
+                    let i = name >> 0;
+                    if (i < 0 || i >= l)
+                    {
+                        throw new ReferenceError("Index " + i + " out of bounds (length=" + l + ").");
+                    }
+                    return base[2 + i];
                 }
-                return base[2 + i];
+                if (name == "length")
+                {
+                    return ctor.elementtypes.length;
+                }
             }
             if (istype(base, bytearrayclass) && !isNaN(Number(name)) && Number(name) == name >> 0)
             {
@@ -4773,11 +4806,7 @@ definemethod($publicns, "isXMLName", {
 
 export function isarray(arg)
 {
-    if (arg instanceof Array)
-    {
-        return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass);
-    }
-    return false;
+    return arg instanceof Array ? istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass) : false;
 }
 
 definemethod($publicns, "isArray", {
@@ -4786,11 +4815,7 @@ definemethod($publicns, "isArray", {
 
 export function ismap(arg)
 {
-    if (arg instanceof Array)
-    {
-        return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], mapclass);
-    }
-    return false;
+    return arg instanceof Array ? istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], mapclass) : false;
 }
 
 definemethod($publicns, "isMap", {
@@ -4799,16 +4824,26 @@ definemethod($publicns, "isMap", {
 
 export function isvector(arg)
 {
-    if (arg instanceof Array)
-    {
-        return istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], vectorclass);
-    }
-    return false;
+    return arg instanceof Array ? istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], vectorclass) : false;
 }
 
 definemethod($publicns, "isVector", {
     exec: isvector,
 });
+
+export function istuple(arg)
+{
+    return arg instanceof Array ? istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass) : false;
+}
+
+definemethod($publicns, "isTuple", {
+    exec: istuple,
+});
+
+export function istuple(arg)
+{
+    return arg instanceof Array ? arg[CONSTRUCTOR_INDEX] instanceof TupleType : false;
+}
 
 export const objectclass = defineclass(name($publicns, "Object"),
     {
@@ -10375,12 +10410,19 @@ export const mapclass = defineclass(name($publicns, "Map"),
         {
             exec()
             {
-                const m =this[MAP_PROPERTIES_INDEX];
+                const m = this[MAP_PROPERTIES_INDEX];
                 if (m instanceof WeakMap)
                 {
                     throw new TypeError("Cannot retrieve the length of a weak Map.");
                 }
                 return (m).size;
+            },
+        })],
+        [name($publicns, "weak"), method(
+        {
+            exec()
+            {
+                return this[MAP_PROPERTIES_INDEX] instanceof WeakMap;
             },
         })],
         [name($publicns, "apply"), method(
