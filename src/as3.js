@@ -10528,6 +10528,13 @@ export const mapclass = defineclass(name($publicns, "Map"),
                 m.clear();
             },
         })],
+        [name($publicns, "clone"), method(
+        {
+            exec()
+            {
+                return clone_impl(this);
+            },
+        })],
     ]
 );
 
