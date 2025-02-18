@@ -17,9 +17,8 @@ for (const child_xn of $.valueiterator(xnode))
     i++;
 }
 
-const datael = $.getproperty($.getproperty(xnode, a_ns, "data"), null, 0);
-console.log("<a:data/>.nodeKind() =", $.callproperty(datael, null, "nodeKind"));
-console.log("<a:data/>.@val =", $.getattribute(datael, null, "val"));
+console.log("<a:data/>.nodeKind() =", $.callproperty(xnode, null, "nodeKind"));
+console.log("<a:data/>.@val =", $.getattribute(xnode, null, "val"));
 
 const fooel = $.getproperty($.getdescendants(xnode, null, "foo"), null, 0);
 console.log("<foo/>.toString() =", $.callproperty(fooel, null, "toString"));

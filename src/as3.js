@@ -1191,6 +1191,25 @@ function w3cnodeexitdoc(w3cnode)
     return w3cnode;
 }
 
+/**
+ * If node is document, return the root element.
+ */
+function w3cnodeexitdocnoclone(w3cnode)
+{
+    if (w3cnode.nodeType == w3cnode.DOCUMENT_NODE)
+    {
+        for (let i = 0; i < w3cnode.childNodes.length; i++)
+        {
+            const c = w3cnode.childNodes[i];
+            if (c.nodeType == c.ELEMENT_NODE)
+            {
+                return c;
+            }
+        }
+    }
+    return w3cnode;
+}
+
 function istypeinstantiatedfrom(type, fromType)
 {
     return type instanceof SpecialTypeAfterSub && type.original === fromType;
@@ -2987,7 +3006,11 @@ export function setproperty(base, qual, name, value)
             }
             else
             {
-                throw new ReferenceError("Cannot assign to a XML tag.");
+                const qualrefl = qual ? reflectnamespace(qual) : null;
+                const name = construct(qnameclass, qualrefl, tostring(name));
+                value = callproperty(call(xmlclass, value), null, "copy");
+                callproperty(base, null, "replace", name, value);
+                return;
             }
         }
 
@@ -4833,23 +4856,46 @@ definemethod($publicns, "isVector", {
 
 export function istuple(arg)
 {
-    return arg instanceof Array ? istypeinstantiatedfrom(arg[CONSTRUCTOR_INDEX], arrayclass) : false;
+    return arg instanceof Array ? arg[CONSTRUCTOR_INDEX] instanceof TupleType : false;
 }
 
 definemethod($publicns, "isTuple", {
     exec: istuple,
 });
 
-export function istuple(arg)
-{
-    return arg instanceof Array ? arg[CONSTRUCTOR_INDEX] instanceof TupleType : false;
-}
-
 export const objectclass = defineclass(name($publicns, "Object"),
     {
         dynamic: true,
     },
     [
+        [name($publicns, "assign"), method(
+        {
+            static: true,
+            exec(target, ...objects)
+            {
+                if (!istype(target, objectclass) || typeof target == "string" || istype(target, xmlclass) || istype(target, xmllistclass))
+                {
+                    return target;
+                }
+                for (let o of objects)
+                {
+                    const names = nameiterator(o);
+                    const values = valueiterator(o);
+                    for (;;)
+                    {
+                        const name_r = names.next();
+                        if (name_r.done)
+                        {
+                            break;
+                        }
+                        const name = name_r.value;
+                        const value = values.next().value;
+                        setproperty(target, null, name, value);
+                    }
+                }
+                return target;
+            },
+        })],
         [name($publicns, "clone"), method(
         {
             static: true,
@@ -5547,7 +5593,7 @@ export const xmlclass = defineclass(name($publicns, "XML"),
             {
                 throw new TypeError("Invalid XML() argument.");
             }
-            const node = new DOMParser().parseFromString(tostring(value), "text/xml");
+            const node = w3cnodeexitdocnoclone(new DOMParser().parseFromString(tostring(value), "text/xml"));
             this[XML_NODE_INDEX] = node;
             w3cnodetoe4xnodemapping.set(node, this);
         },
@@ -5940,6 +5986,8 @@ export const xmlclass = defineclass(name($publicns, "XML"),
                         return "comment";
                     case thisNode.PROCESSING_INSTRUCTION_NODE:
                         return "processing-instruction";
+                    case thisNode.DOCUMENT:
+                        return "document";
                     default:
                         throw new TypeError("Inaccessible node kind.");
                 }
@@ -6126,7 +6174,12 @@ export const xmlclass = defineclass(name($publicns, "XML"),
         {
             exec()
             {
-                return new XMLSerializer().serializeToString(this[XML_NODE_INDEX]);
+                let node = this[XML_NODE_INDEX];
+                if (node.parentNode && node.parentNode.nodeType == node.DOCUMENT)
+                {
+                    node = node.parentNode;
+                }
+                return new XMLSerializer().serializeToString(node);
             }
         })],
         [name(as3ns, "valueOf"), method(
@@ -7131,6 +7184,7 @@ export const functionclass = defineclass(name($publicns, "Function"),
         {
             exec(thisArg, args)
             {
+                args = isarray(args) ? args[ARRAY_SUBARRAY_INDEX].slice(0) : [];
                 return this[FUNCTION_FUNCTION_INDEX].apply(thisArg, args);
             },
         })],
@@ -7236,7 +7290,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return [applytype(arrayclass, [objectclass]), new Map(), r1];
             },
         })],
-        [name($publicns, "typeFullName"), method({
+        [name($publicns, "qualifiedName"), method({
             static: true,
 
             exec(type)
@@ -7253,7 +7307,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return type.name;
             }
         })],
-        [name($publicns, "typeLocalName"), method({
+        [name($publicns, "localName"), method({
             static: true,
 
             exec(type)
@@ -7270,60 +7324,83 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return type.localname;
             }
         })],
-        [name($publicns, "variables"), method({
+        [name($publicns, "properties"), method({
             static: true,
 
-            exec(type)
+            exec(object, virtual = false)
             {
-                if (type === null || type === undefined)
+                if (object === null || object === undefined)
                 {
                     return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
-                if (!istype(type, classclass))
+                virtual = !!virtual;
+
+                let type = null;
+                if (istype(object, classclass))
                 {
-                    throw new ArgumentError("Expected argument of type Class.");
+                    type = object[CLASS_CLASS_INDEX];
                 }
-                type = type[CLASS_CLASS_INDEX];
+                else if (typeof object == "number")
+                {
+                    type = numberclass;
+                }
+                else if (typeof object == "string")
+                {
+                    type = stringclass;
+                }
+                else if (typeof object == "boolean")
+                {
+                    type = booleanclass;
+                }
+                else
+                {
+                    type = object[CONSTRUCTOR_INDEX];
+                }
+
                 if (!(type instanceof Class))
                 {
                     return [applytype(arrayclass, [objectclass]), new Map(), []];
                 }
                 const r = [];
-                for (const [name, trait] of type.prototypenames.dictionary())
+                while (type !== null)
                 {
-                    if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
+                    for (const [name, trait] of type.prototypenames.dictionary())
                     {
-                        continue;
-                    }
-            
-                    const ns = name.ns instanceof Systemns ? null : name.ns.uri;
-                    const localname = name.name;
-            
-                    if (trait instanceof Variable)
-                    {
-                        const r_metadata = [];
-                        for (const metadata of trait.metadata)
+                        if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
                         {
-                            const r = construct(objectclass);
-                            setproperty(r, null, "name", metadata.name);
-                            const entrytuple_t = tupletype([stringclass, stringclass]);
-                            const r_entries = [];
-                            for (const [k, v] of metadata.entries)
-                            {
-                                r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
-                            }
-                            setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
-                            r_metadata.push(r);
+                            continue;
                         }
-                        const r_metadata_array = [applytype(arrayclass, [objectclass]), new Map(), r_metadata];
+                
+                        const ns = name.ns instanceof Systemns ? null : name.ns.uri;
+                        const localname = name.name;
+                
+                        if (trait instanceof Variable || (virtual && trait instanceof VirtualVariable))
+                        {
+                            const r_metadata = [];
+                            for (const metadata of trait.metadata)
+                            {
+                                const r = construct(objectclass);
+                                setproperty(r, null, "name", metadata.name);
+                                const entrytuple_t = tupletype([stringclass, stringclass]);
+                                const r_entries = [];
+                                for (const [k, v] of metadata.entries)
+                                {
+                                    r_entries.push([entrytuple_t, untoucheddynamic, k ?? null, v]);
+                                }
+                                setproperty(r, null, "entries", [applytype(arrayclass, [entrytuple_t]), new Map(), r_entries]);
+                                r_metadata.push(r);
+                            }
+                            const r_metadata_array = [applytype(arrayclass, [objectclass]), new Map(), r_metadata];
 
-                        const r1 = construct(objectclass);
-                        setproperty(r1, null, "metadata", r_metadata_array);
-                        setproperty(r1, null, "namespace", ns);
-                        setproperty(r1, null, "name", localname);
-                        setproperty(r1, null, "type", reflectclass(trait.type));
-                        r.push(r1);
+                            const r1 = construct(objectclass);
+                            setproperty(r1, null, "metadata", r_metadata_array);
+                            setproperty(r1, null, "namespace", ns);
+                            setproperty(r1, null, "name", localname);
+                            setproperty(r1, null, "type", reflectclass(trait.type));
+                            r.push(r1);
+                        }
                     }
+                    type = type.baseclass;
                 }
                 return [applytype(arrayclass, [objectclass]), new Map(), r];
             }
@@ -7331,16 +7408,35 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
         [name($publicns, "propertyType"), method({
             static: true,
 
-            exec(type, name)
+            exec(object, name)
             {
-                if (type === null || type === undefined)
+                if (object === null || object === undefined)
                 {
                     return null;
                 }
-                if (!istype(type, classclass))
+
+                let type = null;
+                if (istype(object, classclass))
                 {
-                    throw new ArgumentError("Expected argument of type Class.");
+                    type = object[CLASS_CLASS_INDEX];
                 }
+                else if (typeof object == "number")
+                {
+                    type = numberclass;
+                }
+                else if (typeof object == "string")
+                {
+                    type = stringclass;
+                }
+                else if (typeof object == "boolean")
+                {
+                    type = booleanclass;
+                }
+                else
+                {
+                    type = object[CONSTRUCTOR_INDEX];
+                }
+
                 let uri = null;
                 if (istype(name, qnameclass))
                 {
@@ -7351,25 +7447,29 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 {
                     name = tostring(name);
                 }
-                type = type[CLASS_CLASS_INDEX];
+
                 if (!(type instanceof Class || type instanceof SpecialTypeAfterSub))
                 {
                     return null;
                 }
-                for (const [name, trait] of type.prototypenames.dictionary())
+                while (type !== null)
                 {
-                    if (!(uri ? (name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) : (name.ns instanceof Userns && name.ns.uri === uri)))
+                    for (const [name, trait] of type.prototypenames.dictionary())
                     {
-                        continue;
+                        if (!(uri ? (name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) : (name.ns instanceof Userns && name.ns.uri === uri)))
+                        {
+                            continue;
+                        }
+                        if (name.name != name)
+                        {
+                            continue;
+                        }
+                        if (trait instanceof Variable || trait instanceof VirtualVariable)
+                        {
+                            return reflectclass(trait.type);
+                        }
                     }
-                    if (name.name != name)
-                    {
-                        continue;
-                    }
-                    if (trait instanceof Variable || trait instanceof VirtualVariable)
-                    {
-                        return reflectclass(trait.type);
-                    }
+                    type = type.baseclass;
                 }
                 return null;
             }
@@ -7456,7 +7556,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return [applytype(arrayclass, [classclass]), new Map(), []];
             }
         })],
-        [name($publicns, "arrayOf"), method({
+        [name($publicns, "createArrayType"), method({
             static: true,
 
             exec(elementType)
@@ -7469,7 +7569,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return applytype(arrayclass, [elementType]);
             }
         })],
-        [name($publicns, "vectorOf"), method({
+        [name($publicns, "createVectorType"), method({
             static: true,
 
             exec(elementType)
@@ -7482,7 +7582,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return applytype(vectorclass, [elementType]);
             }
         })],
-        [name($publicns, "mapOf"), method({
+        [name($publicns, "createMapType"), method({
             static: true,
 
             exec(keyType, valueType)
@@ -7499,7 +7599,7 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return applytype(mapclass, [keyType, valueType]);
             }
         })],
-        [name($publicns, "tupleOf"), method({
+        [name($publicns, "createTupleType"), method({
             static: true,
 
             exec(elementTypes)
@@ -10541,90 +10641,6 @@ export const mapclass = defineclass(name($publicns, "Map"),
 skipParameterizedMap = false;
 
 $publicns = packagens("whack.utils");
-
-// public function describeType(val:*):XML;
-definemethod($publicns, "describeType", {
-    exec(val)
-    {
-        if (istype(val, classclass))
-            {
-            const classobj = val[CLASS_CLASS_INDEX];
-            if (classobj instanceof Interface)
-            {
-                const metadata = describe_metadata(classobj.metadata);
-
-                return construct(xmlclass, "<interface>" + metadata + "</interface>");
-            }
-
-            if (classobj instanceof Class)
-            {
-                const metadata = describe_metadata(classobj.metadata);
-                const static_props = [];
-                const instance_props = [];
-                return construct(xmlclass, "<class>" + metadata + "<static>" + describe_props(classobj.staticnames) + "</static><instance>" + describe_props(classobj.prototypenames) + "</instance></class>");
-            }
-
-            return null;
-        }
-        else
-        {
-            return null;
-        }
-    }
-});
-
-function describe_props(names)
-{
-    const r = [];
-    for (const [name, trait] of names.dictionary())
-    {
-        if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
-        {
-            continue;
-        }
-
-        const ns = name.ns instanceof Systemns ? "" : name.ns.uri.replace(/&/g, "&#38;").replace(/"/g, "&#34;");
-        const localname = name.name.replace(/&/g, "&#38;").replace(/"/g, "&#34;");
-
-        if (trait instanceof Variable)
-        {
-            const metadata = describe_metadata(trait.metadata);
-            r.push(`<variable namespace="${ns}" localName="${localname}">${metadata}</variable>`);
-        }
-        else if (trait instanceof VirtualVariable)
-        {
-            const metadata = describe_metadata(trait.metadata);
-            r.push(`<variable namespace="${ns}" localName="${localname}">${metadata}</variable>`);
-        }
-        else if (trait instanceof Method)
-        {
-            const metadata = describe_metadata(trait.metadata);
-            r.push(`<method namespace="${ns}" localName="${localname}">${metadata}</method>`);
-        }
-    }
-    return r.join("");
-}
-
-function describe_metadata(metadata)
-{
-    const r = [];
-    for (const metadata1 of metadata)
-    {
-        if (!/[\w+]/.test(metadata1.name))
-        {
-            continue;
-        }
-        const entries = [];
-        for (const entry of metadata1.entries)
-        {
-            const k = entry[0] ? entry[0].replace(/&/g, "&#38;").replace(/"/g, "&#34;") : "";
-            const v = entry[1].replace(/&/g, "&#38;").replace(/"/g, "&#34;");
-            entries.push(`<entry key="${k}" value="${v}"/>`);
-        }
-        r.push(`<${metadata1.name}>${entries.join("")}</${metadata1.name}>`);
-    }
-    return r.join("");
-}
 
 // public interface IDataInput { ... }
 export const idatainputitrfc = defineinterface(name($publicns, "IDataInput"), {}, []);
