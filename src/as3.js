@@ -408,11 +408,6 @@ export class Class extends ActionCoreType
 
     /**
      * Sequence of instance variables.
-     * 
-     * If the class is not dynamic, the first Variable element
-     * identifies the slot number 1 of the instance Array;
-     * if the class is dynamic, the first Variable element identifies
-     * the slot number 2 of the instance Array.
      */
     prototypevarslots = [];
 
@@ -563,7 +558,8 @@ export function defineclass(name, options, items)
     {
         baseslots = class1.baseclass.prototypevarslots.slice(0);
     }
-    class1.prototypevarslots.push.apply(baseslots, thesevars);
+    class1.prototypevarslots.push.apply(class1.prototypevarslots, baseslots);
+    class1.prototypevarslots.push.apply(class1.prototypevarslots, thesevars);
 
     // Finish
     globalnames.setnsname(name.ns, name.name, class1);
@@ -11116,22 +11112,29 @@ setglobal($publicns, "Infinity", Infinity);
 
 // Prototype: set properties
 
-setdynamicproperty(objectclass.ecmaprototype, "clone", [functionclass, new Map(), clone_impl]);
+setdynamicproperty(objectclass.ecmaprototype, "clone", [functionclass, new Map(), function() {
+    return clone_impl(this);
+}]);
 
 function clone_impl(obj)
 {
-    if (!(ctor instanceof Array))
+    if (!(obj instanceof Array))
     {
         return obj;
     }
-    const ctor = obj[CONSTRUCTOR_INDEX];
+
+    let ctor = obj[CONSTRUCTOR_INDEX];
     if (ctor instanceof Class)
     {
+        if (ctor.ctor.length !== 0)
+        {
+            throw new TypeError("Cannot clone " + ctor.name + " because its constructor is not optional.");
+        }
         const r = construct(ctor);
 
         while (ctor !== null)
         {
-            for (const [name, trait] of ctor.prototypenames.dictionary())
+            for (let [name, trait] of ctor.prototypenames.dictionary())
             {
                 if (!((name.ns instanceof Systemns && name.ns.kind == Systemns.PUBLIC) || name.ns instanceof Userns))
                 {
@@ -11140,8 +11143,8 @@ function clone_impl(obj)
 
                 if ((trait instanceof Variable && !trait.readonly) || (trait instanceof VirtualVariable && trait.getter !== null && trait.setter !== null))
                 {
-                    const val = getproperty(obj, name.ns, name.name);
-                    if (val !== null && val !== undefined && hasmethod(val, null, "clone"))
+                    let val = getproperty(obj, name.ns, name.name);
+                    if (val instanceof Array && hasmethod(val, null, "clone"))
                     {
                         val = callproperty(val, null, "clone");
                     }
@@ -11151,9 +11154,9 @@ function clone_impl(obj)
             ctor = ctor.baseclass;
         }
 
-        for (const [k, v] in obj[DYNAMIC_PROPERTIES_INDEX].entries())
+        for (const [k, v] of obj[DYNAMIC_PROPERTIES_INDEX].entries())
         {
-            if (v !== null && v !== undefined && hasmethod(v, null, "clone"))
+            if (v instanceof Array && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
@@ -11169,9 +11172,9 @@ function clone_impl(obj)
         {
             setproperty(r, null, "fixed", getproperty(obj, null, "fixed"));
         }
-        for (const el of valueiterator(obj))
+        for (let el of valueiterator(obj))
         {
-            if (el !== null && el !== undefined && hasmethod(el, null, "clone"))
+            if (el instanceof Array && hasmethod(el, null, "clone"))
             {
                 el = callproperty(el, null, "clone");
             }
@@ -11187,13 +11190,13 @@ function clone_impl(obj)
             return obj;
         }
         const r = construct(ctor);
-        for (const [k, v] of m.entries())
+        for (let [k, v] of m.entries())
         {
-            if (k !== null && k !== undefined && hasmethod(k, null, "clone"))
+            if (k instanceof Array && hasmethod(k, null, "clone"))
             {
                 k = callproperty(k, null, "clone");
             }
-            if (v !== null && v !== undefined && hasmethod(v, null, "clone"))
+            if (v instanceof Array && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
