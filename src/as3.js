@@ -8964,8 +8964,7 @@ vectordoubleclass.specialisedprototypenames = new Names([
     {
         exec(...args)
         {
-            const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
+            return Vectornumber_map.apply(this, args);
         }
     })],
     [name(as3ns, "pop"), method(
@@ -9150,12 +9149,12 @@ function Vectornumber_map(callback, thisObject = null)
     let callbackFn = callback[FUNCTION_FUNCTION_INDEX];
     callbackFn = thisObject === null || typeof thisObject == "undefined" ? callbackFn : callbackFn.bind(thisObject);
     const arr = this[VECTOR_SUBARRAY_INDEX];
-    const r = new FlexNumberVector(arr.typedArrayConstructor);
+    const r = [];
     for (let i = 0; i < arr.length; i++)
     {
         r.push(callbackFn(arr.get(i), i, this));
     }
-    return r;
+    return [applytype(vectorclass, [null]), new Map(), r];
 }
 
 function Vectornumber_some(callback, thisObject = null)
@@ -9433,8 +9432,7 @@ vectorfloatclass.specialisedprototypenames = new Names([
     {
         exec(...args)
         {
-            const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
+            return Vectornumber_map.apply(this, args);
         }
     })],
     [name(as3ns, "pop"), method(
@@ -9658,8 +9656,7 @@ vectorintclass.specialisedprototypenames = new Names([
     {
         exec(...args)
         {
-            const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
+            return Vectornumber_map.apply(this, args);
         }
     })],
     [name(as3ns, "pop"), method(
@@ -9883,8 +9880,7 @@ vectoruintclass.specialisedprototypenames = new Names([
     {
         exec(...args)
         {
-            const r = Vectornumber_map.apply(this, args);
-            return [applytype(vectorclass, [null]), untoucheddynamic, Array.from(r[Symbol.iterator]()), false];
+            return Vectornumber_map.apply(this, args);
         }
     })],
     [name(as3ns, "pop"), method(
