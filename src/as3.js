@@ -9154,7 +9154,7 @@ function Vectornumber_map(callback, thisObject = null)
     {
         r.push(callbackFn(arr.get(i), i, this));
     }
-    return [applytype(vectorclass, [null]), new Map(), r];
+    return [applytype(vectorclass, [null]), untoucheddynamic, r];
 }
 
 function Vectornumber_some(callback, thisObject = null)
