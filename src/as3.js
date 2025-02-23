@@ -11144,7 +11144,7 @@ function clone_impl(obj)
                 if ((trait instanceof Variable && !trait.readonly) || (trait instanceof VirtualVariable && trait.getter !== null && trait.setter !== null))
                 {
                     let val = getproperty(obj, name.ns, name.name);
-                    if (val instanceof Array && hasmethod(val, null, "clone"))
+                    if (typeof val === "object" && hasmethod(val, null, "clone"))
                     {
                         val = callproperty(val, null, "clone");
                     }
@@ -11156,7 +11156,7 @@ function clone_impl(obj)
 
         for (const [k, v] of obj[DYNAMIC_PROPERTIES_INDEX].entries())
         {
-            if (v instanceof Array && hasmethod(v, null, "clone"))
+            if (typeof v === "object" && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
@@ -11174,7 +11174,7 @@ function clone_impl(obj)
         }
         for (let el of valueiterator(obj))
         {
-            if (el instanceof Array && hasmethod(el, null, "clone"))
+            if (typeof el === "object" && hasmethod(el, null, "clone"))
             {
                 el = callproperty(el, null, "clone");
             }
@@ -11192,11 +11192,11 @@ function clone_impl(obj)
         const r = construct(ctor);
         for (let [k, v] of m.entries())
         {
-            if (k instanceof Array && hasmethod(k, null, "clone"))
+            if (typeof k === "object" && hasmethod(k, null, "clone"))
             {
                 k = callproperty(k, null, "clone");
             }
-            if (v instanceof Array && hasmethod(v, null, "clone"))
+            if (typeof v === "object" && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
