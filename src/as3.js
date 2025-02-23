@@ -5274,6 +5274,20 @@ export const stringclass = defineclass(name($publicns, "String"),
                 return (this[STRING_VALUE_INDEX]).toUpperCase();
             },
         })],
+        [name(as3ns, "toString"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX];
+            },
+        })],
+        [name(as3ns, "toLocaleString"), method(
+        {
+            exec()
+            {
+                return this[STRING_VALUE_INDEX];
+            },
+        })],
         [name(as3ns, "trim"), method(
         {
             exec()
@@ -11178,7 +11192,7 @@ function clone_impl(obj)
                 if ((trait instanceof Variable && !trait.readonly) || (trait instanceof VirtualVariable && trait.getter !== null && trait.setter !== null))
                 {
                     let val = getproperty(obj, name.ns, name.name);
-                    if (typeof val === "object" && hasmethod(val, null, "clone"))
+                    if ((typeof val === "object" || typeof val === "function") && hasmethod(val, null, "clone"))
                     {
                         val = callproperty(val, null, "clone");
                     }
@@ -11190,7 +11204,7 @@ function clone_impl(obj)
 
         for (const [k, v] of obj[DYNAMIC_PROPERTIES_INDEX].entries())
         {
-            if (typeof v === "object" && hasmethod(v, null, "clone"))
+            if ((typeof v === "object" || typeof v === "function") && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
@@ -11208,7 +11222,7 @@ function clone_impl(obj)
         }
         for (let el of valueiterator(obj))
         {
-            if (typeof el === "object" && hasmethod(el, null, "clone"))
+            if ((typeof el === "object" || typeof el === "function") && hasmethod(el, null, "clone"))
             {
                 el = callproperty(el, null, "clone");
             }
@@ -11226,11 +11240,11 @@ function clone_impl(obj)
         const r = construct(ctor);
         for (let [k, v] of m.entries())
         {
-            if (typeof k === "object" && hasmethod(k, null, "clone"))
+            if ((typeof k === "object" || typeof k === "function") && hasmethod(k, null, "clone"))
             {
                 k = callproperty(k, null, "clone");
             }
-            if (typeof v === "object" && hasmethod(v, null, "clone"))
+            if ((typeof v === "object" || typeof v === "function") && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
@@ -11244,7 +11258,7 @@ function clone_impl(obj)
         for (let i = 0; i !== ctor.elementtypes.length; i++)
         {
             const v = obj[2 + i];
-            if (typeof v === "object" && hasmethod(v, null, "clone"))
+            if ((typeof v === "object" || typeof v === "function") && hasmethod(v, null, "clone"))
             {
                 v = callproperty(v, null, "clone");
             }
