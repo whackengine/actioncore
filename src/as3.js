@@ -11238,6 +11238,23 @@ function clone_impl(obj)
         }
         return r;
     }
+    if (ctor instanceof TupleType)
+    {
+        const r = [ctor, untoucheddynamic];
+        for (let i = 0; i !== ctor.elementtypes.length; i++)
+        {
+            const v = obj[2 + i];
+            if (typeof v === "object" && hasmethod(v, null, "clone"))
+            {
+                v = callproperty(v, null, "clone");
+            }
+            const t = ctor.elementtypes[i];
+            r.push(coerceorfail(v, t, () => {
+                throw new TypeError("Cannot contribute incompatible cloned tuple element: expecting " + typename(t) + ".");
+            }));
+        }
+        return r;
+    }
     return obj;
 }
 
