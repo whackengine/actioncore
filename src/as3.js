@@ -11127,7 +11127,7 @@ function clone_impl(obj)
     const ctor = obj[CONSTRUCTOR_INDEX];
     if (ctor instanceof Class)
     {
-        const r = construct(ctor());
+        const r = construct(ctor);
 
         while (ctor !== null)
         {
