@@ -7320,6 +7320,40 @@ export const thereflectclass = defineclass(name($publicns, "Reflect"),
                 return type.localname;
             }
         })],
+        [name($publicns, "isClass"), method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return false;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                return type instanceof Class || type instanceof SpecialTypeAfterSub;
+            }
+        })],
+        [name($publicns, "hasOptionalConstructor"), method({
+            static: true,
+
+            exec(type)
+            {
+                if (type === null || type === undefined)
+                {
+                    return false;
+                }
+                if (!istype(type, classclass))
+                {
+                    throw new ArgumentError("Expected argument of type Class.");
+                }
+                type = type[CLASS_CLASS_INDEX];
+                return type instanceof Class || type instanceof SpecialTypeAfterSub ? type.ctor.length === 0 : false;
+            }
+        })],
         [name($publicns, "properties"), method({
             static: true,
 
