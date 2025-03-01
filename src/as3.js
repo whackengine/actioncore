@@ -4900,6 +4900,14 @@ export const objectclass = defineclass(name($publicns, "Object"),
                 return hasmethod(val, null, "clone") ? callproperty(val, null, "clone") : clone_impl(val);
             },
         })],
+        [name($publicns, "defaultClone"), method(
+        {
+            static: true,
+            exec(val)
+            {
+                return clone_impl(val);
+            },
+        })],
     ]
 );
 
